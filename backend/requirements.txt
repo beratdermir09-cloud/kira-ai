@@ -13,3 +13,4 @@ aiomysql==0.2.0
 pymysql==1.1.1
 pillow==11.2.1
 beautifulsoup4==4.12.3
+cryptography==42.0.8
