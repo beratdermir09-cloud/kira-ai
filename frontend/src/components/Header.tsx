@@ -1,0 +1,219 @@
+import React, { useState } from 'react'
+import { ChevronDown, Download, Trash2, X, Share2, Keyboard, Sun, Moon, Sliders, Menu, GitCompare, Zap } from 'lucide-react'
+import { Model, Conversation } from '../types'
+
+interface HeaderProps {
+  title: string
+  models: Model[]
+  selectedModel: string
+  onModelChange: (model: string) => void
+  conversation: Conversation | null
+  onClearChat: () => void
+  onExport: () => void
+  onShare: () => void
+  temperature: number
+  onTemperatureChange: (v: number) => void
+  darkMode: boolean
+  onToggleTheme: () => void
+  onShowShortcuts: () => void
+  onMenuClick?: () => void
+  compareMode?: boolean
+  onToggleCompare?: () => void
+  compareModelA?: string
+  compareModelB?: string
+  onCompareModelAChange?: (m: string) => void
+  onCompareModelBChange?: (m: string) => void
+}
+
+export default function Header({
+  title, models, selectedModel, onModelChange,
+  conversation, onClearChat, onExport, onShare,
+  temperature, onTemperatureChange,
+  darkMode, onToggleTheme, onShowShortcuts, onMenuClick,
+  compareMode, onToggleCompare,
+  compareModelA, compareModelB,
+  onCompareModelAChange, onCompareModelBChange,
+}: HeaderProps) {
+  const [showSettings, setShowSettings] = useState(false)
+  const hasMessages = (conversation?.messages?.length ?? 0) > 0
+
+  const Btn = ({
+    onClick, children, title: t, hoverColor = '#fda4af', active = false,
+  }: {
+    onClick: () => void; children: React.ReactNode; title?: string
+    hoverColor?: string; active?: boolean
+  }) => (
+    <button
+      onClick={onClick}
+      title={t}
+      className="p-1.5 rounded-xl transition-all tooltip"
+      style={{
+        background: active ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.04)',
+        border: `1px solid ${active ? 'rgba(225,29,72,0.35)' : 'rgba(225,29,72,0.1)'}`,
+        color: active ? '#fda4af' : '#4a4060',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.color = hoverColor)}
+      onMouseLeave={e => (e.currentTarget.style.color = active ? '#fda4af' : '#4a4060')}
+    >
+      {children}
+    </button>
+  )
+
+  const SelectBox = ({
+    value, onChange, label,
+  }: { value: string; onChange: (v: string) => void; label?: string }) => (
+    <div className="relative flex items-center gap-1.5">
+      {label && <span className="text-[10px] font-mono" style={{ color: '#4a4060' }}>{label}</span>}
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="appearance-none text-xs px-3 py-1.5 pr-7 rounded-xl outline-none cursor-pointer transition-all"
+        style={{
+          background: 'rgba(225,29,72,0.04)',
+          border: '1px solid rgba(225,29,72,0.12)',
+          color: '#94a3b8',
+        }}
+      >
+        {models.map(m => (
+          <option key={m.id} value={m.id} style={{ background: '#0a0812' }}>{m.name}</option>
+        ))}
+      </select>
+      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4a4060' }} />
+    </div>
+  )
+
+  return (
+    <div className="relative">
+      <div
+        className="flex items-center justify-between px-4 py-2.5 relative"
+        style={{
+          background: 'rgba(4,3,8,0.97)',
+          borderBottom: '1px solid rgba(225,29,72,0.08)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        {/* Glow line top */}
+        <div className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(225,29,72,0.3), transparent)' }} />
+
+        {/* Left */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-1.5 rounded-xl transition-all"
+            style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.1)', color: '#4a4060' }}
+          >
+            <Menu size={15} />
+          </button>
+          <div className="w-1.5 h-1.5 rounded-full hidden sm:block"
+            style={{ background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.8)' }} />
+          <h2 className="font-semibold text-sm truncate max-w-[130px] sm:max-w-[200px]" style={{ color: '#e2e8f0' }}>
+            {title}
+          </h2>
+          {compareMode && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-mono tracking-wider"
+              style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.25)', color: '#fda4af' }}>
+              KARŞILAŞTIRMA
+            </span>
+          )}
+        </div>
+
+        {/* Right */}
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-end">
+          {compareMode ? (
+            <>
+              <SelectBox value={compareModelA || selectedModel} onChange={v => onCompareModelAChange?.(v)} label="A:" />
+              <span className="text-[10px] hidden sm:block" style={{ color: '#3a2030' }}>vs</span>
+              <SelectBox value={compareModelB || selectedModel} onChange={v => onCompareModelBChange?.(v)} label="B:" />
+            </>
+          ) : (
+            <div className="hidden sm:block">
+              <SelectBox value={selectedModel} onChange={onModelChange} />
+            </div>
+          )}
+
+          <Btn onClick={() => onToggleCompare?.()} title="Model Karşılaştır" active={compareMode} hoverColor="#fb923c">
+            <GitCompare size={14} />
+          </Btn>
+          <Btn onClick={() => setShowSettings(!showSettings)} title="Ayarlar" active={showSettings}>
+            <Sliders size={14} />
+          </Btn>
+          <Btn onClick={onToggleTheme} title="Tema" hoverColor="#fbbf24">
+            {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+          </Btn>
+          <Btn onClick={onShowShortcuts} title="Kısayollar">
+            <Keyboard size={14} />
+          </Btn>
+          {hasMessages && (
+            <>
+              <Btn onClick={onShare} title="Paylaş" hoverColor="#818cf8"><Share2 size={14} /></Btn>
+              <Btn onClick={onExport} title="Dışa aktar" hoverColor="#4ade80"><Download size={14} /></Btn>
+              <Btn onClick={onClearChat} title="Temizle" hoverColor="#f87171"><Trash2 size={14} /></Btn>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div
+          className="absolute right-4 top-14 z-50 rounded-2xl p-5 w-72 shadow-2xl"
+          style={{
+            background: 'rgba(6,4,12,0.98)',
+            border: '1px solid rgba(225,29,72,0.2)',
+            backdropFilter: 'blur(40px)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(225,29,72,0.06)',
+          }}
+        >
+          {/* Top glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(225,29,72,0.5), transparent)' }} />
+
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-semibold text-sm text-white flex items-center gap-2">
+              <Sliders size={13} style={{ color: '#e11d48' }} />
+              Ayarlar
+            </h3>
+            <button onClick={() => setShowSettings(false)} style={{ color: '#4a4060' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#94a3b8')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#4a4060')}>
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Temperature */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-medium" style={{ color: '#94a3b8' }}>Yaratıcılık</label>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
+                style={{ background: 'rgba(225,29,72,0.1)', color: '#fda4af' }}>
+                {temperature.toFixed(1)}
+              </span>
+            </div>
+            <input type="range" min="0" max="1" step="0.1" value={temperature}
+              onChange={e => onTemperatureChange(parseFloat(e.target.value))} className="w-full" />
+            <div className="flex justify-between text-[10px] mt-2" style={{ color: '#2a1820' }}>
+              <span>Kesin</span><span>Yaratıcı</span>
+            </div>
+          </div>
+
+          {/* Compare mode info */}
+          <div className="rounded-xl p-3" style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.1)' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <GitCompare size={12} style={{ color: '#e11d48' }} />
+              <span className="text-xs font-medium" style={{ color: '#fda4af' }}>Model Karşılaştırma</span>
+            </div>
+            <p className="text-[10px]" style={{ color: '#3a2030' }}>
+              Aynı soruyu iki farklı modele aynı anda sor, yanıtları yan yana gör.
+            </p>
+          </div>
+
+          <div className="mt-4 pt-4 text-[10px]"
+            style={{ borderTop: '1px solid rgba(225,29,72,0.08)', color: '#2a1820' }}>
+            Düşük = tutarlı · Yüksek = yaratıcı
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
