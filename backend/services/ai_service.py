@@ -146,6 +146,20 @@ def is_rate_limit_error(e: Exception) -> bool:
     return "429" in msg or "rate limit" in msg or "rate_limit_exceeded" in msg or "tokens per day" in msg
 
 
+def is_model_error(e: Exception) -> bool:
+    """Model kaldırılmış veya desteklenmiyor mu?"""
+    msg = str(e).lower()
+    return (
+        "decommissioned" in msg or
+        "model_not_found" in msg or
+        "model not found" in msg or
+        "does not exist" in msg or
+        "no longer supported" in msg or
+        "invalid model" in msg or
+        "400" in msg
+    )
+
+
 VISION_MODELS = [
     "llama-3.2-90b-vision-preview",
     "llama-3.2-11b-vision-preview",
@@ -186,7 +200,8 @@ async def get_ai_response_stream(
 
         except Exception as e:
             last_error = e
-            if is_rate_limit_error(e):
+            if is_rate_limit_error(e) or is_model_error(e):
+                # Rate limit veya model hatası — sonraki modeli dene
                 continue
             else:
                 await asyncio.sleep(1)
@@ -205,7 +220,7 @@ async def get_ai_response_stream(
                     return
                 except Exception as e2:
                     last_error = e2
-                    if is_rate_limit_error(e2):
+                    if is_rate_limit_error(e2) or is_model_error(e2):
                         continue
                     continue
 
@@ -235,7 +250,7 @@ async def get_ai_response(
             )
             return response.choices[0].message.content
         except Exception as e:
-            if is_rate_limit_error(e):
+            if is_rate_limit_error(e) or is_model_error(e):
                 continue
             await asyncio.sleep(1)
             try:
