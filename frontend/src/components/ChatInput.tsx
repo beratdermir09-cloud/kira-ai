@@ -175,9 +175,25 @@ export default function ChatInput({
       {file && (
         <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-xl w-fit max-w-full"
           style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.2)' }}>
-          <Paperclip size={11} style={{ color: '#e11d48' }} className="shrink-0" />
+          {/* Resim önizleme */}
+          {file.type.startsWith('image/') ? (
+            <img
+              src={URL.createObjectURL(file)}
+              alt="önizleme"
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+              style={{ border: '1px solid rgba(225,29,72,0.3)' }}
+            />
+          ) : (
+            <Paperclip size={11} style={{ color: '#e11d48' }} className="shrink-0" />
+          )}
           <span className="text-xs truncate max-w-[180px]" style={{ color: '#94a3b8' }}>{file.name}</span>
           <span className="text-xs" style={{ color: '#3a2030' }}>{formatSize(file.size)}</span>
+          {file.type.startsWith('image/') && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md"
+              style={{ background: 'rgba(225,29,72,0.1)', color: '#fda4af', border: '1px solid rgba(225,29,72,0.2)' }}>
+              👁 Vision
+            </span>
+          )}
           <button onClick={() => setFile(null)} className="ml-1 transition-colors"
             style={{ color: '#4a4060' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}

@@ -145,6 +145,12 @@ def is_rate_limit_error(e: Exception) -> bool:
     return "429" in msg or "rate limit" in msg or "rate_limit_exceeded" in msg or "tokens per day" in msg
 
 
+VISION_MODELS = [
+    "llama-3.2-90b-vision-preview",
+    "llama-3.2-11b-vision-preview",
+]
+
+
 async def get_ai_response_stream(
     messages: List[dict],
     model: str = None,
@@ -246,13 +252,35 @@ async def get_ai_response(
     return "❌ Şu an tüm modeller meşgul. Birkaç saniye bekleyip tekrar dene."
 
 
-def build_messages_for_api(conversation_messages: List[dict], new_message: str, file_content: str = None) -> List[dict]:
+def build_messages_for_api(
+    conversation_messages: List[dict],
+    new_message: str,
+    file_content: str = None,
+    image_base64: str = None,
+    image_media_type: str = "image/jpeg"
+) -> List[dict]:
     messages = []
     history = conversation_messages[-20:] if len(conversation_messages) > 20 else conversation_messages
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
-    if file_content:
+    if image_base64:
+        # Vision mesajı — resim + metin birlikte
+        user_content = [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{image_media_type};base64,{image_base64}"
+                }
+            },
+            {
+                "type": "text",
+                "text": new_message or "Bu görseli analiz et ve detaylıca açıkla."
+            }
+        ]
+        if file_content:
+            user_content.append({"type": "text", "text": f"\n\n📎 **Dosya İçeriği:**\n{file_content}"})
+    elif file_content:
         user_content = f"{new_message}\n\n---\n📎 **Yüklenen İçerik:**\n\n{file_content}"
     else:
         user_content = new_message

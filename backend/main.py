@@ -43,11 +43,14 @@ async def health():
 @app.get("/api/models")
 async def get_models():
     return {"models": [
-        {"id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B (En İyi)"},
-        {"id": "llama-3.1-8b-instant",    "name": "Llama 3.1 8B (En Hızlı)"},
-        {"id": "llama-3.2-11b-vision-preview", "name": "Llama 3.2 Vision (Görsel)"},
-        {"id": "mixtral-8x7b-32768",       "name": "Mixtral 8x7B"},
-        {"id": "gemma2-9b-it",             "name": "Gemma 2 9B"},
+        {"id": "llama-3.3-70b-versatile",        "name": "Llama 3.3 70B — En İyi"},
+        {"id": "llama-3.1-8b-instant",            "name": "Llama 3.1 8B — En Hızlı"},
+        {"id": "llama-3.2-90b-vision-preview",    "name": "Llama 3.2 90B Vision — Görsel"},
+        {"id": "llama-3.2-11b-vision-preview",    "name": "Llama 3.2 11B Vision"},
+        {"id": "deepseek-r1-distill-llama-70b",   "name": "DeepSeek R1 — Akıl Yürütme"},
+        {"id": "qwen-qwq-32b",                    "name": "Qwen QwQ 32B — Matematik"},
+        {"id": "mixtral-8x7b-32768",              "name": "Mixtral 8x7B"},
+        {"id": "gemma2-9b-it",                    "name": "Gemma 2 9B"},
     ]}
 
 
