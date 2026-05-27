@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react'
-import { Send, Paperclip, X, StopCircle, Mic, MicOff, Zap, BookOpen, GitCompare } from 'lucide-react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
+import { Send, Paperclip, X, StopCircle, Mic, MicOff, BookOpen, GitCompare } from 'lucide-react'
 import { useSpeechRecognition } from '../hooks/useSpeech'
 
 interface ChatInputProps {
@@ -74,25 +74,6 @@ export default function ChatInput({
     if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 200) + 'px' }
   }, [message])
 
-  // Ctrl+V ile görsel yapıştırma
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items
-    if (!items) return
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        e.preventDefault()
-        const blob = item.getAsFile()
-        if (blob) {
-          // Dosya adı oluştur
-          const ext = item.type.split('/')[1] || 'png'
-          const pastedFile = new File([blob], `ekran-goruntusu-${Date.now()}.${ext}`, { type: item.type })
-          setFile(pastedFile)
-        }
-        break
-      }
-    }
-  }
-
   const handleSend = () => {
     if ((!message.trim() && !file) || isLoading || disabled) return
     if (compareMode && onCompare && message.trim()) {
@@ -114,6 +95,31 @@ export default function ChatInput({
 
   const isDisabled = disabled || guestLimitReached
   const canSend = (message.trim() || file) && !isDisabled
+
+  // Global paste — pencerede herhangi bir yere Ctrl+V yapıştırınca çalışır
+  const handleGlobalPaste = useCallback((e: ClipboardEvent) => {
+    if (isDisabled || isLoading) return
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (const item of Array.from(items)) {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        const blob = item.getAsFile()
+        if (blob) {
+          const ext = item.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png'
+          const pastedFile = new File([blob], `ekran-goruntusu-${Date.now()}.${ext}`, { type: item.type })
+          setFile(pastedFile)
+          setTimeout(() => textareaRef.current?.focus(), 50)
+        }
+        break
+      }
+    }
+  }, [isDisabled, isLoading])
+
+  useEffect(() => {
+    window.addEventListener('paste', handleGlobalPaste)
+    return () => window.removeEventListener('paste', handleGlobalPaste)
+  }, [handleGlobalPaste])
 
   if (guestLimitReached) {
     return (
@@ -276,7 +282,6 @@ export default function ChatInput({
           value={message}
           onChange={e => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={
