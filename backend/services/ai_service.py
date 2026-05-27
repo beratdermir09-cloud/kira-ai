@@ -137,7 +137,6 @@ FALLBACK_MODELS = [
     "llama3-8b-8192",
     "deepseek-r1-distill-llama-70b",
     "qwen-qwq-32b",
-    "gemma2-9b-it",
 ]
 
 

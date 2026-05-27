@@ -42,12 +42,6 @@ async def health():
 
 @app.get("/api/models")
 async def get_models():
-    """
-    Groq API'den aktif modelleri çek.
-    Hata olursa sabit listeyi döndür.
-    """
-    # Sabit liste — Groq'ta aktif ve güçlü modeller
-    # Groq bir modeli kaldırırsa fallback mekanizması devreye girer
     return {"models": [
         {"id": "llama-3.3-70b-versatile",        "name": "Llama 3.3 70B — En İyi"},
         {"id": "llama-3.1-8b-instant",            "name": "Llama 3.1 8B — En Hızlı"},
@@ -55,7 +49,6 @@ async def get_models():
         {"id": "llama-3.2-11b-vision-preview",    "name": "Llama 3.2 11B Vision"},
         {"id": "deepseek-r1-distill-llama-70b",   "name": "DeepSeek R1 — Akıl Yürütme"},
         {"id": "qwen-qwq-32b",                    "name": "Qwen QwQ 32B — Matematik"},
-        {"id": "gemma2-9b-it",                    "name": "Gemma 2 9B"},
     ]}
 
 
