@@ -74,6 +74,25 @@ export default function ChatInput({
     if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 200) + 'px' }
   }, [message])
 
+  // Ctrl+V ile görsel yapıştırma
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        const blob = item.getAsFile()
+        if (blob) {
+          // Dosya adı oluştur
+          const ext = item.type.split('/')[1] || 'png'
+          const pastedFile = new File([blob], `ekran-goruntusu-${Date.now()}.${ext}`, { type: item.type })
+          setFile(pastedFile)
+        }
+        break
+      }
+    }
+  }
+
   const handleSend = () => {
     if ((!message.trim() && !file) || isLoading || disabled) return
     if (compareMode && onCompare && message.trim()) {
@@ -257,6 +276,7 @@ export default function ChatInput({
           value={message}
           onChange={e => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={
@@ -264,7 +284,9 @@ export default function ChatInput({
               ? 'İki modeli karşılaştır...'
               : isDisabled
               ? 'Sohbet seç veya yeni sohbet başlat...'
-              : 'Kira\'ya bir şey sor... (Enter = gönder)'
+              : file?.type.startsWith('image/')
+              ? 'Görsel hakkında ne sormak istiyorsun?'
+              : 'Kira\'ya bir şey sor... (Ctrl+V ile görsel yapıştır)'
           }
           disabled={isLoading || isDisabled}
           rows={1}

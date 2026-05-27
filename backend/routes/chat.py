@@ -52,7 +52,9 @@ def process_uploaded_file(file_bytes: bytes, file_name: str, model: Optional[str
         return None, img_b64, media_type, vision_model
     else:
         raw = process_file(file_name, file_bytes)
-        return truncate_content(raw), None, None, model
+        # Döküman için vision model seçilmişse normal modele geç
+        safe_model = model if model not in VISION_MODELS else 'llama-3.3-70b-versatile'
+        return truncate_content(raw), None, None, safe_model
 
 
 @router.post("/stream")
@@ -87,6 +89,10 @@ async def chat_stream(
     urls = re.findall(r'https?://[^\s]+', message)
     if urls:
         url_content = await fetch_url_content(urls[0])
+
+    # Dosya yokken vision model seçilmişse normal modele geç
+    if not image_base64 and model in VISION_MODELS:
+        model = 'llama-3.3-70b-versatile'
 
     extra = ""
     if file_content:

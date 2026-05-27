@@ -60,6 +60,19 @@ export default function App() {
     return unsub
   }, [])
 
+  // Backend'i uyandır — Railway ücretsiz planda uyku moduna geçiyor
+  useEffect(() => {
+    const wakeUp = async () => {
+      try {
+        const base = import.meta.env.VITE_API_URL || ''
+        if (base) {
+          await fetch(base + '/api/health', { method: 'GET' })
+        }
+      } catch { /* sessizce geç */ }
+    }
+    wakeUp()
+  }, [])
+
   // Guest limit: localStorage'dan yükle
   useEffect(() => {
     if (isGuest) {
