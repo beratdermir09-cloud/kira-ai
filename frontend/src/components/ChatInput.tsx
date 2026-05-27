@@ -196,35 +196,62 @@ export default function ChatInput({
         </div>
       )}
 
-      {/* File preview */}
+      {/* File preview — resim için büyük önizleme, döküman için badge */}
       {file && (
-        <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-xl w-fit max-w-full"
-          style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.2)' }}>
-          {/* Resim önizleme */}
+        <div className="mb-2">
           {file.type.startsWith('image/') ? (
-            <img
-              src={URL.createObjectURL(file)}
-              alt="önizleme"
-              className="w-8 h-8 rounded-lg object-cover shrink-0"
-              style={{ border: '1px solid rgba(225,29,72,0.3)' }}
-            />
+            /* Resim — büyük önizleme kartı */
+            <div className="relative inline-block">
+              <img
+                src={URL.createObjectURL(file)}
+                alt="önizleme"
+                className="rounded-2xl object-cover"
+                style={{
+                  maxWidth: '180px',
+                  maxHeight: '180px',
+                  minWidth: '80px',
+                  minHeight: '80px',
+                  border: '1px solid rgba(225,29,72,0.3)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                  display: 'block',
+                }}
+              />
+              {/* Kaldır butonu */}
+              <button
+                onClick={() => setFile(null)}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                style={{
+                  background: 'rgba(15,10,20,0.95)',
+                  border: '1px solid rgba(225,29,72,0.4)',
+                  color: '#fda4af',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(225,29,72,0.3)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,10,20,0.95)')}
+              >
+                <X size={12} />
+              </button>
+              {/* Vision etiketi */}
+              <div className="absolute bottom-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-mono"
+                style={{ background: 'rgba(0,0,0,0.7)', color: '#fda4af', border: '1px solid rgba(225,29,72,0.3)' }}>
+                👁 Vision
+              </div>
+            </div>
           ) : (
-            <Paperclip size={11} style={{ color: '#e11d48' }} className="shrink-0" />
+            /* Döküman — kompakt badge */
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl w-fit max-w-full"
+              style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.2)' }}>
+              <Paperclip size={11} style={{ color: '#e11d48' }} className="shrink-0" />
+              <span className="text-xs truncate max-w-[200px]" style={{ color: '#94a3b8' }}>{file.name}</span>
+              <span className="text-xs" style={{ color: '#3a2030' }}>{formatSize(file.size)}</span>
+              <button onClick={() => setFile(null)} className="ml-1 transition-colors"
+                style={{ color: '#4a4060' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#4a4060')}>
+                <X size={11} />
+              </button>
+            </div>
           )}
-          <span className="text-xs truncate max-w-[180px]" style={{ color: '#94a3b8' }}>{file.name}</span>
-          <span className="text-xs" style={{ color: '#3a2030' }}>{formatSize(file.size)}</span>
-          {file.type.startsWith('image/') && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md"
-              style={{ background: 'rgba(225,29,72,0.1)', color: '#fda4af', border: '1px solid rgba(225,29,72,0.2)' }}>
-              👁 Vision
-            </span>
-          )}
-          <button onClick={() => setFile(null)} className="ml-1 transition-colors"
-            style={{ color: '#4a4060' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#4a4060')}>
-            <X size={11} />
-          </button>
         </div>
       )}
 
