@@ -42,40 +42,14 @@ async def health():
 
 @app.get("/api/models")
 async def get_models():
-    """
-    Groq API'den aktif modelleri çek.
-    Hata olursa sabit güvenli listeyi döndür.
-    """
-    # Sabit güvenli liste — sadece aktif olduğu doğrulanmış modeller
-    safe_models = [
-        {"id": "llama-3.3-70b-versatile",     "name": "Llama 3.3 70B — En İyi"},
-        {"id": "llama-3.1-8b-instant",         "name": "Llama 3.1 8B — En Hızlı"},
-        {"id": "llama-3.2-90b-vision-preview", "name": "Llama 3.2 90B Vision — Görsel"},
-        {"id": "llama-3.2-11b-vision-preview", "name": "Llama 3.2 11B Vision"},
-        {"id": "deepseek-r1-distill-llama-70b","name": "DeepSeek R1 — Akıl Yürütme"},
-    ]
-
-    # Groq API'den aktif modelleri çekmeyi dene
-    try:
-        import httpx
-        groq_key = os.getenv("GROQ_API_KEY", "")
-        if groq_key:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(
-                    "https://api.groq.com/openai/v1/models",
-                    headers={"Authorization": f"Bearer {groq_key}"}
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    active_ids = {m["id"] for m in data.get("data", [])}
-                    # Sadece aktif olan modelleri döndür
-                    filtered = [m for m in safe_models if m["id"] in active_ids]
-                    if filtered:
-                        return {"models": filtered}
-    except Exception:
-        pass  # Hata olursa sabit listeyi kullan
-
-    return {"models": safe_models}
+    return {"models": [
+        {"id": "llama-3.3-70b-versatile",                      "name": "Llama 3.3 70B — En İyi"},
+        {"id": "llama-3.1-8b-instant",                         "name": "Llama 3.1 8B — En Hızlı"},
+        {"id": "meta-llama/llama-4-scout-17b-16e-instruct",    "name": "Llama 4 Scout — Yeni"},
+        {"id": "meta-llama/llama-4-maverick-17b-128e-instruct","name": "Llama 4 Maverick — Çok Dilli"},
+        {"id": "llama-3.2-90b-vision-preview",                 "name": "Llama 3.2 90B Vision — Görsel"},
+        {"id": "llama-3.2-11b-vision-preview",                 "name": "Llama 3.2 11B Vision"},
+    ]}
 
 
 if __name__ == "__main__":

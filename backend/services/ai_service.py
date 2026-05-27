@@ -131,11 +131,10 @@ def get_customized_system_prompt(preferences: dict = None, modules: list = None)
 # Model fallback sırası — rate limit veya hata durumunda sırayla dener
 FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",
-    "llama-3.1-70b-versatile",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
     "llama-3.1-8b-instant",
-    "llama3-70b-8192",
-    "llama3-8b-8192",
-    "deepseek-r1-distill-llama-70b",
+    "llama-3.1-70b-versatile",
 ]
 
 
