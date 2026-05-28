@@ -55,6 +55,7 @@ class User(Base):
     total_messages: Mapped[int] = mapped_column(Integer, default=0)
     preferences: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # JSON
     modules: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # JSON array
+    memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # JSON — uzun süreli hafıza
 
     conversations: Mapped[List["Conversation"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

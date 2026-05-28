@@ -43,12 +43,16 @@ async def health():
 @app.get("/api/models")
 async def get_models():
     return {"models": [
-        {"id": "llama-3.3-70b-versatile",                      "name": "Llama 3.3 70B — En İyi"},
-        {"id": "llama-3.1-8b-instant",                         "name": "Llama 3.1 8B — En Hızlı"},
-        {"id": "meta-llama/llama-4-scout-17b-16e-instruct",    "name": "Llama 4 Scout — Yeni"},
-        {"id": "meta-llama/llama-4-maverick-17b-128e-instruct","name": "Llama 4 Maverick — Çok Dilli"},
-        {"id": "llama-3.2-90b-vision-preview",                 "name": "Llama 3.2 90B Vision — Görsel"},
-        {"id": "llama-3.2-11b-vision-preview",                 "name": "Llama 3.2 11B Vision"},
+        {"id": "llama-3.3-70b-versatile",                          "name": "Llama 3.3 70B — En İyi"},
+        {"id": "meta-llama/llama-4-maverick-17b-128e-instruct",    "name": "Llama 4 Maverick — Çok Dilli"},
+        {"id": "meta-llama/llama-4-scout-17b-16e-instruct",        "name": "Llama 4 Scout — Vision"},
+        {"id": "moonshotai/kimi-k2-instruct-0905",                 "name": "Kimi K2 — Akıllı"},
+        {"id": "qwen/qwen3-32b",                                   "name": "Qwen3 32B — Güçlü"},
+        {"id": "qwen-qwq-32b",                                     "name": "QwQ 32B — Akıl Yürütme"},
+        {"id": "deepseek-r1-distill-llama-70b",                    "name": "DeepSeek R1 70B — Akıl Yürütme"},
+        {"id": "deepseek-r1-distill-qwen-32b",                     "name": "DeepSeek R1 Qwen 32B"},
+        {"id": "llama-3.1-8b-instant",                             "name": "Llama 3.1 8B — En Hızlı"},
+        {"id": "gemma2-9b-it",                                     "name": "Gemma 2 9B — Google"},
     ]}
 
 

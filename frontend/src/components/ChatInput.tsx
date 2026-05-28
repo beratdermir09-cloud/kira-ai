@@ -241,10 +241,20 @@ export default function ChatInput({
             /* Döküman — kompakt badge */
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl w-fit max-w-full"
               style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.2)' }}>
-              <Paperclip size={11} style={{ color: '#e11d48' }} className="shrink-0" />
-              <span className="text-xs truncate max-w-[200px]" style={{ color: '#94a3b8' }}>{file.name}</span>
-              <span className="text-xs" style={{ color: '#3a2030' }}>{formatSize(file.size)}</span>
-              <button onClick={() => setFile(null)} className="ml-1 transition-colors"
+              <span className="text-sm shrink-0">
+                {file.name.endsWith('.pdf') ? '📄' :
+                 file.name.match(/\.(docx?|doc)$/i) ? '📝' :
+                 file.name.match(/\.(xlsx?|xls)$/i) ? '📊' :
+                 file.name.match(/\.(csv)$/i) ? '📊' :
+                 file.name.match(/\.(json)$/i) ? '🔧' :
+                 file.name.match(/\.(py|js|ts|jsx|tsx|java|c|cpp|cs|go|rs|php|rb|sh)$/i) ? '💻' :
+                 '📎'}
+              </span>
+              <div className="min-w-0">
+                <span className="text-xs truncate max-w-[200px] block" style={{ color: '#e2e8f0' }}>{file.name}</span>
+                <span className="text-[10px]" style={{ color: '#4a4060' }}>{formatSize(file.size)} · Analiz için hazır</span>
+              </div>
+              <button onClick={() => setFile(null)} className="ml-1 shrink-0 transition-colors"
                 style={{ color: '#4a4060' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#4a4060')}>
@@ -318,7 +328,9 @@ export default function ChatInput({
               ? 'Sohbet seç veya yeni sohbet başlat...'
               : file?.type.startsWith('image/')
               ? 'Görsel hakkında ne sormak istiyorsun?'
-              : 'Kira\'ya bir şey sor... (Ctrl+V ile görsel yapıştır)'
+              : file
+              ? `"${file.name}" hakkında ne sormak istiyorsun? (Analiz et, özetle, açıkla...)`
+              : 'Kira\'ya bir şey sor...'
           }
           disabled={isLoading || isDisabled}
           rows={1}

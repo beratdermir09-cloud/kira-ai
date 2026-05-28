@@ -110,8 +110,53 @@ Kullanıcı "aslan portresi" derse şunu yaz:
 Görkemli bir aslan portresi 🦁"""
 
 
-def get_customized_system_prompt(preferences: dict = None, modules: list = None) -> str:
+def get_customized_system_prompt(preferences: dict = None, modules: list = None, memory: dict = None, display_name: str = None, personality: str = None) -> str:
+    from services.memory_service import build_memory_context
     prompt = SYSTEM_PROMPT
+
+    # Kişilik katmanı — base prompt'un üzerine eklenir
+    personality_overlays = {
+        "serious": """
+## KİŞİLİK MODU: CİDDİ & PROFESYONELs
+- Şu an ciddi ve profesyonel moddasın. Espri, şaka veya emoji KULLANMA.
+- Her yanıt net, yapılandırılmış ve doğrudan olsun.
+- Gereksiz giriş cümlesi yok. Konuya direkt gir.
+- Uzun açıklamalarda başlık ve madde işareti kullan.
+- Duygusal tepkiler verme — analitik ve tarafsız kal.
+- "Harika!", "Süper!" gibi dolgu ifadeler kesinlikle yasak.
+- Kullanıcıya saygılı ama mesafeli bir üslupla hitap et.""",
+
+        "funny": """
+## KİŞİLİK MODU: ESPRİLİ & EĞLENCELİ
+- Şu an esprili ve eğlenceli moddasın. Kira'nın en neşeli hali bu.
+- Her fırsatta uygun bir espri, kelime oyunu veya komik benzetme yap.
+- Emoji kullan — ama doğal ve yerinde olsun 😄
+- Konuyu açıklarken bile eğlenceli bir dil kullan.
+- Kullanıcıyı güldürmeye çalış ama bilgiyi doğru ver.
+- Kendi kendine dalga geçebilirsin ("Ben bir yapay zekayım ama bunu bile biliyorum 😅").
+- Ciddi konularda bile hafif bir dokunuş ekle — ama abartma.
+- Meme referansları, pop kültür göndermeler yapabilirsin.""",
+
+        "technical": """
+## KİŞİLİK MODU: TEKNİK & DERİN
+- Şu an teknik uzman moddasın. Derinlemesine, detaylı ve teknik yanıtlar ver.
+- Her konuyu altta yatan mekanizmalarıyla açıkla.
+- Kod örnekleri, algoritmalar, karmaşıklık analizi ekle.
+- Teknik terimler kullan — ama gerektiğinde kısa açıkla.
+- Performans, güvenlik, ölçeklenebilirlik açısından değerlendir.
+- Alternatif yaklaşımları ve trade-off'ları belirt.
+- Kaynaklar, standartlar, best practice'lere atıf yap.
+- Yüzeysel cevap verme — her zaman "neden" sorusunu yanıtla.""",
+    }
+
+    if personality and personality in personality_overlays:
+        prompt = prompt + "\n" + personality_overlays[personality]
+
+    # Uzun süreli hafıza — en üste enjekte et, Kira her zaman görsün
+    memory_context = build_memory_context(memory or {}, display_name)
+    if memory_context:
+        prompt = prompt + "\n\n" + memory_context
+
     if preferences:
         prompt += "\n\n## KULLANICI TERCİHLERİ:\n"
         for k, v in preferences.items():
@@ -131,10 +176,15 @@ def get_customized_system_prompt(preferences: dict = None, modules: list = None)
 # Model fallback sırası — rate limit veya hata durumunda sırayla dener
 FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",
-    "meta-llama/llama-4-scout-17b-16e-instruct",
     "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "moonshotai/kimi-k2-instruct-0905",
+    "qwen/qwen3-32b",
+    "qwen-qwq-32b",
+    "deepseek-r1-distill-llama-70b",
+    "deepseek-r1-distill-qwen-32b",
     "llama-3.1-8b-instant",
-    "llama-3.1-70b-versatile",
+    "gemma2-9b-it",
 ]
 
 
@@ -158,6 +208,8 @@ def is_model_error(e: Exception) -> bool:
 
 
 VISION_MODELS = [
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
     "llama-3.2-90b-vision-preview",
     "llama-3.2-11b-vision-preview",
 ]
@@ -168,13 +220,16 @@ async def get_ai_response_stream(
     model: str = None,
     temperature: float = None,
     preferences: dict = None,
-    modules: list = None
+    modules: list = None,
+    memory: dict = None,
+    display_name: str = None,
+    personality: str = None,
 ) -> AsyncGenerator[str, None]:
     requested_model = model or os.getenv("MODEL_NAME", "llama-3.3-70b-versatile")
     temperature = temperature if temperature is not None else float(os.getenv("TEMPERATURE", "0.7"))
     max_tokens = int(os.getenv("MAX_TOKENS", "8192"))
 
-    system_prompt = get_customized_system_prompt(preferences, modules)
+    system_prompt = get_customized_system_prompt(preferences, modules, memory, display_name, personality)
     full_messages = [{"role": "system", "content": system_prompt}] + messages
 
     models_to_try = [requested_model] + [m for m in FALLBACK_MODELS if m != requested_model]
@@ -292,9 +347,10 @@ def build_messages_for_api(
             }
         ]
         if file_content:
-            user_content.append({"type": "text", "text": f"\n\n📎 **Dosya İçeriği:**\n{file_content}"})
+            user_content.append({"type": "text", "text": file_content})
     elif file_content:
-        user_content = f"{new_message}\n\n---\n📎 **Yüklenen İçerik:**\n\n{file_content}"
+        # Dosya içeriği zaten talimat + içerik olarak formatlanmış geliyor
+        user_content = f"{new_message}\n\n{file_content}" if new_message else file_content
     else:
         user_content = new_message
 

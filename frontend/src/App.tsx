@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { Conversation, Message, Model } from './types'
+import { Conversation, Message, Model, KiraPersonality } from './types'
 import { api, streamChat } from './api'
 import Sidebar from './components/Sidebar'
 import ChatWindow from './components/ChatWindow'
@@ -32,6 +32,7 @@ export default function App() {
   const [models, setModels] = useState<Model[]>([])
   const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile')
   const [temperature, setTemperature] = useState(0.7)
+  const [personality, setPersonality] = useState<KiraPersonality>('default')
 
   const [showSearch, setShowSearch] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -129,10 +130,15 @@ export default function App() {
   const loadModels = async () => {
     try { setModels(await api.getModels()) } catch {
       setModels([
-        { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (En İyi)' },
-        { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (En Hızlı)' },
-        { id: 'llama-3.2-11b-vision-preview', name: 'Llama 3.2 Vision' },
-        { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
+        { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+        { id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick' },
+        { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout (Vision)' },
+        { id: 'moonshotai/kimi-k2-instruct-0905', name: 'Kimi K2' },
+        { id: 'qwen/qwen3-32b', name: 'Qwen3 32B' },
+        { id: 'qwen-qwq-32b', name: 'QwQ 32B (Reasoning)' },
+        { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 70B' },
+        { id: 'deepseek-r1-distill-qwen-32b', name: 'DeepSeek R1 Qwen 32B' },
+        { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Hızlı)' },
         { id: 'gemma2-9b-it', name: 'Gemma 2 9B' },
       ])
     }
@@ -418,7 +424,9 @@ export default function App() {
           }]
         } : null)
       },
-      selectedModel, temperature, uid()
+      selectedModel, temperature, uid(),
+      // Sadece giriş yapan kullanıcılara kişilik özelliği
+      !isGuest ? personality : undefined
     )
   }, [selectedModel, temperature, user, isStreaming, loadConversation, loadConversations, uid])
 
@@ -539,6 +547,9 @@ export default function App() {
           compareModelB={compareModelB}
           onCompareModelAChange={setCompareModelA}
           onCompareModelBChange={setCompareModelB}
+          personality={personality}
+          onPersonalityChange={setPersonality}
+          isGuest={isGuest}
         />
 
         <ChatWindow

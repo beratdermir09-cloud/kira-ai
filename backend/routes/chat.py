@@ -14,7 +14,12 @@ from services.file_processor import process_file, truncate_content
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-VISION_MODELS = {'llama-3.2-90b-vision-preview', 'llama-3.2-11b-vision-preview'}
+VISION_MODELS = {
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
+    'llama-3.2-90b-vision-preview',
+    'llama-3.2-11b-vision-preview',
+}
 IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'}
 MEDIA_MAP = {
     'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
@@ -48,7 +53,7 @@ def process_uploaded_file(file_bytes: bytes, file_name: str, model: Optional[str
         img_b64 = base64.b64encode(file_bytes).decode('utf-8')
         media_type = MEDIA_MAP.get(ext, 'image/jpeg')
         # Vision model yoksa en iyi vision modeli seç
-        vision_model = model if model in VISION_MODELS else 'llama-3.2-90b-vision-preview'
+        vision_model = model if model in VISION_MODELS else 'meta-llama/llama-4-scout-17b-16e-instruct'
         return None, img_b64, media_type, vision_model
     else:
         raw = process_file(file_name, file_bytes)
@@ -64,6 +69,7 @@ async def chat_stream(
     file: Optional[UploadFile] = File(None),
     model: Optional[str] = Form(None),
     temperature: Optional[float] = Form(None),
+    personality: Optional[str] = Form(None),
     x_user_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
 ):
@@ -96,7 +102,38 @@ async def chat_stream(
 
     extra = ""
     if file_content:
-        extra += f"\n\n📎 **Dosya ({file_name}):**\n{file_content}"
+        ext = file_name.lower().rsplit('.', 1)[-1] if file_name and '.' in file_name else ''
+        # Dosya türüne göre AI'ya analiz talimatı ver
+        if ext == 'pdf':
+            file_label = f"📄 PDF Dosyası: {file_name}"
+            file_instruction = "Aşağıdaki PDF içeriğini analiz et. Kullanıcının sorusuna göre özetle, açıkla veya yanıtla."
+        elif ext in ('docx', 'doc'):
+            file_label = f"📝 Word Belgesi: {file_name}"
+            file_instruction = "Aşağıdaki Word belgesi içeriğini analiz et. Kullanıcının sorusuna göre yanıtla."
+        elif ext in ('xlsx', 'xls'):
+            file_label = f"📊 Excel Dosyası: {file_name}"
+            file_instruction = "Aşağıdaki Excel verilerini analiz et. Tablo yapısını anla, istatistikler çıkar, kullanıcının sorusunu yanıtla."
+        elif ext == 'csv':
+            file_label = f"📊 CSV Verisi: {file_name}"
+            file_instruction = "Aşağıdaki CSV verisini analiz et. Sütunları, satır sayısını ve içeriği değerlendir."
+        elif ext == 'json':
+            file_label = f"🔧 JSON Verisi: {file_name}"
+            file_instruction = "Aşağıdaki JSON verisini analiz et. Yapıyı açıkla ve kullanıcının sorusunu yanıtla."
+        elif ext in ('py', 'js', 'ts', 'jsx', 'tsx', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'sh'):
+            file_label = f"� Kod Dosyası: {file_name}"
+            file_instruction = "Aşağıdaki kodu analiz et. Kullanıcının sorusuna göre açıkla, hata bul veya iyileştir."
+        elif ext in ('html', 'css', 'xml', 'yaml', 'yml', 'toml', 'ini'):
+            file_label = f"🔧 Yapılandırma/Markup: {file_name}"
+            file_instruction = "Aşağıdaki dosyayı analiz et ve kullanıcının sorusunu yanıtla."
+        elif ext in ('txt', 'md'):
+            file_label = f"📃 Metin Dosyası: {file_name}"
+            file_instruction = "Aşağıdaki metin içeriğini analiz et ve kullanıcının sorusunu yanıtla."
+        else:
+            file_label = f"📎 Dosya: {file_name}"
+            file_instruction = "Aşağıdaki dosya içeriğini analiz et ve kullanıcının sorusunu yanıtla."
+
+        extra += f"\n\n{file_instruction}\n\n**{file_label}:**\n```\n{file_content}\n```"
+
     if url_content:
         extra += f"\n\n🔗 **URL İçeriği:**\n{url_content}"
 
@@ -109,6 +146,7 @@ async def chat_stream(
 
         async def generate_guest():
             try:
+                # Guest: hafıza YOK, kişilik de YOK — sadece temel Kira
                 async for token in get_ai_response_stream(api_messages, model=model, temperature=temperature):
                     yield f"data: {json.dumps({'token': token})}\n\n"
                 yield f"data: {json.dumps({'done': True, 'conversation_id': conversation_id})}\n\n"
@@ -136,24 +174,46 @@ async def chat_stream(
 
     prefs = None
     mods = None
+    display_name = None
     from database import User as DBUser
     user_model = await db.get(DBUser, user_id)
     if user_model:
         prefs = json.loads(user_model.preferences) if user_model.preferences else None
         mods = json.loads(user_model.modules) if user_model.modules else None
+        display_name = user_model.display_name
+
+    # Uzun süreli hafızayı yükle
+    user_memory = await db_storage.get_user_memory(db, user_id)
 
     async def generate():
         full_response = ""
         try:
             async for token in get_ai_response_stream(
                 api_messages, model=model, temperature=temperature,
-                preferences=prefs, modules=mods
+                preferences=prefs, modules=mods,
+                memory=user_memory, display_name=display_name,
+                personality=personality,
             ):
                 full_response += token
                 yield f"data: {json.dumps({'token': token})}\n\n"
 
             await db_storage.add_message(db, conversation_id, "assistant", full_response,
                                           model_used=model, user_id=user_id)
+
+            # Konuşmadan yeni bilgi çıkar ve hafızayı güncelle (arka planda)
+            try:
+                from services.memory_service import extract_and_update_memory
+                updated_memory = await extract_and_update_memory(
+                    current_memory=user_memory,
+                    user_message=message,
+                    assistant_response=full_response,
+                    display_name=display_name,
+                )
+                if updated_memory:
+                    await db_storage.update_user_memory(db, user_id, updated_memory)
+            except Exception:
+                pass  # Hafıza güncelleme hatası akışı bozmasın
+
             yield f"data: {json.dumps({'done': True, 'conversation_id': conversation_id})}\n\n"
 
         except Exception as e:

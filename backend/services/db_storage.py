@@ -5,6 +5,7 @@ from database import User, Conversation, Message
 from datetime import datetime
 from typing import Optional, List
 import uuid
+import json
 from services.encryption import encrypt_text, decrypt_text
 
 
@@ -35,6 +36,28 @@ async def get_stats(db: AsyncSession) -> dict:
     total_convs = (await db.execute(select(func.count(Conversation.id)))).scalar()
     total_msgs = (await db.execute(select(func.count(Message.id)))).scalar()
     return {"total_users": total_users, "total_conversations": total_convs, "total_messages": total_msgs}
+
+
+# ── Hafıza (Uzun Süreli) ──────────────────────────────────────────────────────
+
+async def get_user_memory(db: AsyncSession, user_id: str) -> dict:
+    """Kullanıcının uzun süreli hafızasını döndür."""
+    user = await db.get(User, user_id)
+    if not user or not user.memory:
+        return {}
+    try:
+        return json.loads(user.memory)
+    except Exception:
+        return {}
+
+
+async def update_user_memory(db: AsyncSession, user_id: str, memory: dict) -> None:
+    """Kullanıcının uzun süreli hafızasını güncelle."""
+    user = await db.get(User, user_id)
+    if not user:
+        return
+    user.memory = json.dumps(memory, ensure_ascii=False)
+    await db.commit()
 
 
 # ── Conversations ─────────────────────────────────────────────────────────────
@@ -70,7 +93,6 @@ async def get_shared_conversation(db: AsyncSession, share_id: str) -> Optional[d
 
 
 async def create_conversation(db: AsyncSession, user_id: str, title: str = "Yeni Sohbet") -> dict:
-    # Ensure user exists
     user = await db.get(User, user_id)
     if not user:
         user = User(id=user_id)
@@ -127,12 +149,10 @@ async def add_message(db: AsyncSession, conv_id: str, role: str, content: str,
                   created_at=datetime.now())
     db.add(msg)
 
-    # Update conversation
     result = await db.execute(select(Conversation).where(Conversation.id == conv_id))
     conv = result.scalar_one_or_none()
     if conv:
         conv.updated_at = datetime.now()
-        # Auto-title from first user message
         if role == "user":
             msgs_count = await db.execute(
                 select(func.count(Message.id)).where(Message.conversation_id == conv_id)
@@ -140,7 +160,6 @@ async def add_message(db: AsyncSession, conv_id: str, role: str, content: str,
             if (msgs_count.scalar() or 0) <= 1:
                 conv.title = content[:50] + ("..." if len(content) > 50 else "")
 
-    # Update user message count
     if user_id and role == "user":
         user = await db.get(User, user_id)
         if user:
@@ -165,8 +184,6 @@ async def pin_message(db: AsyncSession, msg_id: str, user_id: str) -> bool:
 
 
 async def search_messages(db: AsyncSession, user_id: str, query: str) -> List[dict]:
-    # Since messages are encrypted, we can't search via SQL ILIKE.
-    # We must fetch messages for the user and search in memory.
     result = await db.execute(
         select(Message, Conversation.title)
         .join(Conversation)
@@ -174,16 +191,16 @@ async def search_messages(db: AsyncSession, user_id: str, query: str) -> List[di
         .order_by(desc(Message.created_at))
     )
     rows = result.all()
-    
+
     matches = []
     query_lower = query.lower()
     for m, title in rows:
         decrypted = decrypt_text(m.content)
         if query_lower in decrypted.lower():
             m_dict = msg_to_dict(m)
-            m_dict["content"] = decrypted # ensure it's decrypted
+            m_dict["content"] = decrypted
             matches.append({"message": m_dict, "conversation_title": title})
-            if len(matches) >= 20: # limit to 20 results
+            if len(matches) >= 20:
                 break
     return matches
 

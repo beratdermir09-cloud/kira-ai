@@ -52,3 +52,12 @@ export interface CompareResult {
   responseB: string
   prompt: string
 }
+
+export type KiraPersonality = 'default' | 'serious' | 'funny' | 'technical'
+
+export interface PersonalityOption {
+  id: KiraPersonality
+  label: string
+  emoji: string
+  description: string
+}

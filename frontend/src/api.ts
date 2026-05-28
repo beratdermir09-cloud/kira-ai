@@ -74,6 +74,7 @@ export async function streamChat(
   model?: string,
   temperature?: number,
   userId?: string,
+  personality?: string,
 ) {
   const formData = new FormData()
   formData.append('conversation_id', conversationId)
@@ -81,6 +82,7 @@ export async function streamChat(
   if (file) formData.append('file', file)
   if (model) formData.append('model', model)
   if (temperature !== undefined) formData.append('temperature', temperature.toString())
+  if (personality && personality !== 'default') formData.append('personality', personality)
 
   let doneCalled = false
 

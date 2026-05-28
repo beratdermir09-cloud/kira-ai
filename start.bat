@@ -5,40 +5,30 @@ echo ========================================
 echo   Kira AI Baslatiliyor...
 echo ========================================
 echo.
-echo   Yerel: http://localhost:5173
-echo   Deploy icin: DEPLOY.md dosyasini ac
+echo   Web: https://kiragpt.vercel.app
 echo.
 
 echo Backend baslatiliyor (port 8000)...
-start "AI Backend" cmd /k "cd backend && venv\Scripts\activate && python main.py"
+start "Kira Backend" cmd /k "cd backend && venv\Scripts\activate && python main.py"
 
 timeout /t 3 /nobreak > nul
 
-echo Frontend baslatiliyor (port 5173)...
-start "AI Frontend" cmd /k "cd frontend && npm run dev -- --host"
-
 echo.
 echo ========================================
-echo   Uygulama hazir!
+echo   Backend hazir!
 echo.
-echo   Bilgisayardan: http://localhost:5173
+echo   Uygulama: https://kiragpt.vercel.app
+echo ========================================
 echo.
-
-:: IP adresini bul ve goster
-for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4" ^| findstr /v "169.254"') do (
-    set IP=%%a
-    goto :found
-)
-:found
-set IP=%IP: =%
-echo   Telefondan (ayni ag): http://%IP%:5173
-echo   (Telefon ve bilgisayar ayni Wi-Fi'da olmali)
+echo   NOT: Veritabani icin XAMPP'tan
+echo   sadece MySQL'i baslatmaniz yeterli.
+echo   Apache'ye gerek yok.
 echo.
 echo ========================================
 echo   5 saniye sonra tarayici acilacak...
 echo ========================================
 timeout /t 5 /nobreak > nul
-start http://localhost:5173
+start https://kiragpt.vercel.app
 
 echo.
 echo Pencereyi kapatabilirsiniz.

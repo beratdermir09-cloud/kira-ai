@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
-import { ChevronDown, Download, Trash2, X, Share2, Keyboard, Sun, Moon, Sliders, Menu, GitCompare, Zap } from 'lucide-react'
-import { Model, Conversation } from '../types'
+import { ChevronDown, Download, Trash2, X, Share2, Keyboard, Sun, Moon, Sliders, Menu, GitCompare } from 'lucide-react'
+import { Model, Conversation, KiraPersonality } from '../types'
+
+const PERSONALITIES: { id: KiraPersonality; emoji: string; label: string; description: string }[] = [
+  { id: 'default',   emoji: '✨', label: 'Varsayılan', description: 'Samimi ve dengeli Kira' },
+  { id: 'serious',   emoji: '🎯', label: 'Ciddi',      description: 'Profesyonel, net, emojisiz' },
+  { id: 'funny',     emoji: '😄', label: 'Esprili',    description: 'Neşeli, eğlenceli, komik' },
+  { id: 'technical', emoji: '⚙️', label: 'Teknik',     description: 'Derin, detaylı, uzman' },
+]
 
 interface HeaderProps {
   title: string
@@ -23,6 +30,10 @@ interface HeaderProps {
   compareModelB?: string
   onCompareModelAChange?: (m: string) => void
   onCompareModelBChange?: (m: string) => void
+  // Kişilik — sadece giriş yapanlara göster
+  personality?: KiraPersonality
+  onPersonalityChange?: (p: KiraPersonality) => void
+  isGuest?: boolean
 }
 
 export default function Header({
@@ -33,9 +44,11 @@ export default function Header({
   compareMode, onToggleCompare,
   compareModelA, compareModelB,
   onCompareModelAChange, onCompareModelBChange,
+  personality = 'default', onPersonalityChange, isGuest = false,
 }: HeaderProps) {
   const [showSettings, setShowSettings] = useState(false)
   const hasMessages = (conversation?.messages?.length ?? 0) > 0
+  const activePersonality = PERSONALITIES.find(p => p.id === personality) || PERSONALITIES[0]
 
   const Btn = ({
     onClick, children, title: t, hoverColor = '#fda4af', active = false,
@@ -110,6 +123,22 @@ export default function Header({
           <h2 className="font-semibold text-sm truncate max-w-[130px] sm:max-w-[200px]" style={{ color: '#e2e8f0' }}>
             {title}
           </h2>
+          {/* Aktif kişilik badge — sadece giriş yapanlara, default değilse */}
+          {!isGuest && personality && personality !== 'default' && (
+            <button
+              onClick={() => setShowSettings(true)}
+              className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-mono tracking-wider transition-all"
+              style={{
+                background: 'rgba(225,29,72,0.08)',
+                border: '1px solid rgba(225,29,72,0.2)',
+                color: '#fda4af',
+              }}
+              title="Kişiliği değiştir"
+            >
+              <span>{activePersonality.emoji}</span>
+              <span>{activePersonality.label.toUpperCase()}</span>
+            </button>
+          )}
           {compareMode && (
             <span className="text-[10px] px-2 py-0.5 rounded-full font-mono tracking-wider"
               style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.25)', color: '#fda4af' }}>
@@ -196,6 +225,42 @@ export default function Header({
               <span>Kesin</span><span>Yaratıcı</span>
             </div>
           </div>
+
+          {/* Kişilik Seçici — sadece giriş yapanlara */}
+          {!isGuest && onPersonalityChange && (
+            <div className="mb-5">
+              <label className="text-xs font-medium block mb-3" style={{ color: '#94a3b8' }}>
+                Kira'nın Kişiliği
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PERSONALITIES.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => onPersonalityChange(p.id)}
+                    className="flex flex-col items-start px-3 py-2.5 rounded-xl text-left transition-all"
+                    style={{
+                      background: personality === p.id ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.03)',
+                      border: `1px solid ${personality === p.id ? 'rgba(225,29,72,0.45)' : 'rgba(225,29,72,0.1)'}`,
+                    }}
+                    onMouseEnter={e => {
+                      if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.3)'
+                    }}
+                    onMouseLeave={e => {
+                      if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.1)'
+                    }}
+                  >
+                    <span className="text-base mb-0.5">{p.emoji}</span>
+                    <span className="text-xs font-semibold" style={{ color: personality === p.id ? '#fda4af' : '#94a3b8' }}>
+                      {p.label}
+                    </span>
+                    <span className="text-[10px] leading-tight mt-0.5" style={{ color: '#3a2030' }}>
+                      {p.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Compare mode info */}
           <div className="rounded-xl p-3" style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.1)' }}>
