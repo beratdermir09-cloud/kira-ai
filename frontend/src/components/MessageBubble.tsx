@@ -4,8 +4,8 @@ import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
-  Copy, Check, Bot, User, Paperclip, ThumbsUp, ThumbsDown,
-  RotateCcw, Pin, Volume2, VolumeX, Download, Share2, Sparkles,
+  Copy, Check, Paperclip, ThumbsUp, ThumbsDown,
+  RotateCcw, Pin, Volume2, VolumeX, Download, Share2, Sparkles, User,
 } from 'lucide-react'
 import { Message } from '../types'
 import { format } from 'date-fns'
@@ -27,9 +27,9 @@ function CopyButton({ text }: { text: string }) {
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
       className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all text-xs"
       style={{
-        background: copied ? 'rgba(74,222,128,0.1)' : 'rgba(225,29,72,0.08)',
-        border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(225,29,72,0.2)'}`,
-        color: copied ? '#4ade80' : '#94a3b8',
+        background: copied ? 'rgba(16,185,129,0.1)' : 'rgba(139,92,246,0.08)',
+        border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : 'rgba(139,92,246,0.2)'}`,
+        color: copied ? '#34d399' : '#94a3b8',
       }}
     >
       {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -41,71 +41,55 @@ function CopyButton({ text }: { text: string }) {
 function GeneratedImage({ url, prompt }: { url: string; prompt?: string }) {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
-
-  // Base64 mi yoksa normal URL mi?
   const isBase64 = url.startsWith('data:')
 
   return (
     <div className="flex flex-col gap-2 my-3" style={{ maxWidth: 'min(400px, calc(100vw - 80px))' }}>
-      {/* Image card */}
-      <div
-        className="relative rounded-2xl overflow-hidden group/img"
+      <div className="relative rounded-2xl overflow-hidden group/img"
         style={{
           width: '100%',
           minHeight: loaded ? 'auto' : '260px',
-          background: 'rgba(6,4,12,0.95)',
-          border: '1px solid rgba(225,29,72,0.25)',
-          boxShadow: '0 12px 50px rgba(0,0,0,0.7), 0 0 30px rgba(225,29,72,0.08)',
-        }}
-      >
+          background: 'rgba(10,8,20,0.95)',
+          border: '1px solid rgba(139,92,246,0.25)',
+          boxShadow: '0 12px 50px rgba(0,0,0,0.7), 0 0 30px rgba(124,58,237,0.08)',
+        }}>
         {/* Corner accents */}
-        <div className="absolute top-0 left-0 w-5 h-5 border-t border-l rounded-tl-2xl z-10 pointer-events-none"
-          style={{ borderColor: 'rgba(225,29,72,0.5)' }} />
-        <div className="absolute top-0 right-0 w-5 h-5 border-t border-r rounded-tr-2xl z-10 pointer-events-none"
-          style={{ borderColor: 'rgba(225,29,72,0.5)' }} />
-        <div className="absolute bottom-0 left-0 w-5 h-5 border-b border-l rounded-bl-2xl z-10 pointer-events-none"
-          style={{ borderColor: 'rgba(225,29,72,0.5)' }} />
-        <div className="absolute bottom-0 right-0 w-5 h-5 border-b border-r rounded-br-2xl z-10 pointer-events-none"
-          style={{ borderColor: 'rgba(225,29,72,0.5)' }} />
+        {['tl','tr','bl','br'].map(c => (
+          <div key={c} className={`absolute ${c.includes('t') ? 'top-0' : 'bottom-0'} ${c.includes('l') ? 'left-0' : 'right-0'} w-5 h-5 z-10 pointer-events-none`}
+            style={{
+              borderTop: c.includes('t') ? '1px solid rgba(139,92,246,0.5)' : undefined,
+              borderBottom: c.includes('b') ? '1px solid rgba(139,92,246,0.5)' : undefined,
+              borderLeft: c.includes('l') ? '1px solid rgba(139,92,246,0.5)' : undefined,
+              borderRight: c.includes('r') ? '1px solid rgba(139,92,246,0.5)' : undefined,
+              borderRadius: c === 'tl' ? '12px 0 0 0' : c === 'tr' ? '0 12px 0 0' : c === 'bl' ? '0 0 0 12px' : '0 0 12px 0',
+            }} />
+        ))}
 
-        {/* Loading */}
         {!loaded && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 image-skeleton">
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'rgba(225,29,72,0.15)', borderTopColor: '#e11d48' }} />
+                style={{ borderColor: 'rgba(139,92,246,0.15)', borderTopColor: '#7c3aed' }} />
               <div className="absolute inset-2 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'rgba(249,115,22,0.15)', borderTopColor: '#f97316', animationDirection: 'reverse', animationDuration: '0.8s' }} />
+                style={{ borderColor: 'rgba(6,182,212,0.15)', borderTopColor: '#0891b2', animationDirection: 'reverse', animationDuration: '0.8s' }} />
             </div>
-            <div className="text-center">
-              <p className="text-xs font-medium typing-pulse" style={{ color: '#fda4af' }}>Görsel yükleniyor</p>
-              <p className="text-[10px] mt-0.5" style={{ color: '#3a2030' }}>Flux AI</p>
-            </div>
+            <p className="text-xs font-medium typing-pulse" style={{ color: '#a78bfa' }}>Görsel yükleniyor</p>
           </div>
         )}
 
-        {/* Error state */}
         {error && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.2)' }}>
-              <span className="text-2xl">🖼️</span>
-            </div>
+            <span className="text-2xl">🖼️</span>
             <p className="text-xs" style={{ color: '#94a3b8' }}>Görsel yüklenemedi</p>
           </div>
         )}
 
-        {/* Image */}
-        <img
-          src={url}
-          alt={prompt || 'AI Görseli'}
+        <img src={url} alt={prompt || 'AI Görseli'}
           className="w-full object-cover transition-transform duration-500 group-hover/img:scale-[1.02]"
           style={{ display: loaded ? 'block' : 'none', borderRadius: '14px' }}
           onLoad={() => { setLoaded(true); setError(false) }}
-          onError={() => setError(true)}
-        />
+          onError={() => setError(true)} />
 
-        {/* Prompt overlay — hover'da göster */}
         {loaded && prompt && (
           <div className="absolute bottom-0 left-0 right-0 px-3 py-3 opacity-0 group-hover/img:opacity-100 transition-opacity"
             style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', borderRadius: '0 0 14px 14px' }}>
@@ -114,60 +98,32 @@ function GeneratedImage({ url, prompt }: { url: string; prompt?: string }) {
         )}
       </div>
 
-      {/* Alt butonlar — HER ZAMAN görünür */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* İndir — base64 ise çalışır, URL ise yeni sekmede açar */}
-        <a
-          href={url}
-          download={`kira-gorsel-${Date.now()}.jpg`}
-          target={isBase64 ? undefined : '_blank'}
-          rel="noreferrer"
+        <a href={url} download={`kira-gorsel-${Date.now()}.jpg`}
+          target={isBase64 ? undefined : '_blank'} rel="noreferrer"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-          style={{
-            background: 'rgba(225,29,72,0.08)',
-            border: '1px solid rgba(225,29,72,0.25)',
-            color: '#fda4af',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(225,29,72,0.18)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(225,29,72,0.25)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(225,29,72,0.08)'; e.currentTarget.style.boxShadow = 'none' }}
-        >
-          <Download size={11} />
-          <span>İndir</span>
+          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)', color: '#a78bfa' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.18)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.08)' }}>
+          <Download size={11} /><span>İndir</span>
         </a>
-
-        {/* Kopyala — base64 ise kopyala, URL ise linki kopyala */}
         <button
           onClick={async () => {
             try {
               if (isBase64) {
-                // Base64'ü blob'a çevir ve panoya kopyala
-                const res = await fetch(url)
-                const blob = await res.blob()
+                const res = await fetch(url); const blob = await res.blob()
                 await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })])
                 alert('Görsel panoya kopyalandı!')
               } else {
-                await navigator.clipboard.writeText(url)
-                alert('Görsel linki kopyalandı!')
+                await navigator.clipboard.writeText(url); alert('Görsel linki kopyalandı!')
               }
-            } catch {
-              // Clipboard API desteklenmiyorsa linki kopyala
-              if (!isBase64) {
-                await navigator.clipboard.writeText(url).catch(() => {})
-                alert('Link kopyalandı!')
-              }
-            }
+            } catch { if (!isBase64) { await navigator.clipboard.writeText(url).catch(() => {}); alert('Link kopyalandı!') } }
           }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-          style={{
-            background: 'rgba(225,29,72,0.04)',
-            border: '1px solid rgba(225,29,72,0.15)',
-            color: '#6b7280',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(225,29,72,0.12)'; e.currentTarget.style.color = '#fda4af' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(225,29,72,0.04)'; e.currentTarget.style.color = '#6b7280' }}
-        >
-          <Share2 size={11} />
-          <span>{isBase64 ? 'Kopyala' : 'Linki kopyala'}</span>
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
+          <Share2 size={11} /><span>{isBase64 ? 'Kopyala' : 'Linki kopyala'}</span>
         </button>
       </div>
     </div>
@@ -202,9 +158,10 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
   }
 
   return (
-    <div className={`message-enter group flex gap-2 sm:gap-3 px-2 sm:px-3 py-2 mx-0.5 sm:mx-1 rounded-2xl transition-all ${isUser ? 'flex-row-reverse' : ''}`}
+    <div
+      className={`message-enter group flex gap-2 sm:gap-3 px-2 sm:px-3 py-2 mx-0.5 sm:mx-1 rounded-2xl transition-all ${isUser ? 'flex-row-reverse' : ''}`}
       style={{ background: 'transparent' }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(225,29,72,0.015)')}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.02)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
       {/* Avatar */}
@@ -220,21 +177,20 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
         ) : (
           <div className="w-8 h-8 rounded-xl flex items-center justify-center relative"
             style={{
-              background: 'linear-gradient(135deg, #1a0810, #2a0c10)',
-              border: '1px solid rgba(225,29,72,0.4)',
-              boxShadow: '0 3px 12px rgba(225,29,72,0.25), inset 0 1px 0 rgba(225,29,72,0.15)',
+              background: 'linear-gradient(135deg, #1e1040, #0c2040)',
+              border: '1px solid rgba(139,92,246,0.4)',
+              boxShadow: '0 3px 12px rgba(124,58,237,0.25), inset 0 1px 0 rgba(139,92,246,0.15)',
             }}>
-            <Bot size={14} style={{ color: '#fda4af' }} />
-            {/* Pulse ring */}
+            <Sparkles size={14} style={{ color: '#a78bfa' }} />
             {isStreaming && (
               <div className="absolute inset-0 rounded-xl animate-ping opacity-30"
-                style={{ border: '1px solid #e11d48' }} />
+                style={{ border: '1px solid #7c3aed' }} />
             )}
           </div>
         )}
         {compareLabel && (
           <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{ background: compareLabel === 'A' ? '#e11d48' : '#f97316' }}>
+            style={{ background: compareLabel === 'A' ? '#7c3aed' : '#0891b2' }}>
             {compareLabel}
           </div>
         )}
@@ -244,15 +200,15 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
         {/* Header */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-xs font-semibold"
-            style={{ color: isUser ? '#a78bfa' : '#fda4af' }}>
+            style={{ color: isUser ? '#a78bfa' : '#67e8f9' }}>
             {isUser ? 'Sen' : compareLabel ? `Model ${compareLabel}` : 'Kira'}
           </span>
-          <span className="text-[10px]" style={{ color: '#1a1020' }}>
+          <span className="text-[10px]" style={{ color: '#1e293b' }}>
             {format(new Date(message.timestamp), 'HH:mm', { locale: tr })}
           </span>
           {message.model_used && !isUser && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-md font-mono"
-              style={{ background: 'rgba(225,29,72,0.08)', color: '#e11d48', border: '1px solid rgba(225,29,72,0.18)' }}>
+              style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>
               {message.model_used.split('-')[0]}
             </span>
           )}
@@ -262,7 +218,7 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
         {/* File badge */}
         {message.file_name && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs"
-            style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.15)', color: '#94a3b8' }}>
+            style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)', color: '#94a3b8' }}>
             <Paperclip size={10} />
             <span>{message.file_name}</span>
           </div>
@@ -282,7 +238,6 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
                 background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
                 boxShadow: '0 4px 20px rgba(79,70,229,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
               }}>
-              {/* Shine */}
               <div className="absolute top-0 left-0 right-0 h-px"
                 style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }} />
               <p className="whitespace-pre-wrap">{message.content}</p>
@@ -291,28 +246,25 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
             /* ── AI bubble ── */
             <div className="relative rounded-2xl rounded-tl-sm text-sm overflow-hidden"
               style={{
-                background: 'linear-gradient(145deg, rgba(16,8,24,0.7) 0%, rgba(8,4,12,0.7) 100%)',
+                background: 'linear-gradient(145deg, rgba(14,10,28,0.85) 0%, rgba(8,6,18,0.85) 100%)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(225,29,72,0.25)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(225,29,72,0.15)',
+                border: '1px solid rgba(139,92,246,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(139,92,246,0.1)',
               }}>
-              {/* Top accent line */}
+              {/* Top accent */}
               <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, #e11d48, #f97316, transparent)' }} />
-
-              {/* Left accent bar */}
+                style={{ background: 'linear-gradient(90deg, transparent, #7c3aed, #0891b2, transparent)' }} />
+              {/* Left bar */}
               <div className="absolute left-0 top-3 bottom-3 w-px"
-                style={{ background: 'linear-gradient(to bottom, transparent, rgba(225,29,72,0.4), transparent)' }} />
+                style={{ background: 'linear-gradient(to bottom, transparent, rgba(139,92,246,0.5), transparent)' }} />
 
               {/* AI label */}
               <div className="flex items-center gap-1.5 px-4 pt-3 pb-1">
-                <Sparkles size={10} style={{ color: '#e11d48' }} />
-                <span className="text-[10px] font-mono tracking-wider" style={{ color: '#3a2030' }}>
-                  KIRA
-                </span>
+                <Sparkles size={10} style={{ color: '#7c3aed' }} />
+                <span className="text-[10px] font-mono tracking-wider" style={{ color: '#4a3a6a' }}>KIRA</span>
                 {isStreaming && (
-                  <span className="text-[10px] font-mono tracking-wider animate-pulse" style={{ color: '#e11d48' }}>
+                  <span className="text-[10px] font-mono tracking-wider animate-pulse" style={{ color: '#7c3aed' }}>
                     ● yazıyor
                   </span>
                 )}
@@ -329,17 +281,16 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
                         const isBlock = !props.inline && match
                         return isBlock ? (
                           <div className="relative my-3 rounded-xl overflow-hidden"
-                            style={{ border: '1px solid rgba(225,29,72,0.18)' }}>
-                            {/* Code header */}
+                            style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
                             <div className="flex items-center justify-between px-4 py-2"
-                              style={{ background: 'rgba(4,2,8,0.98)', borderBottom: '1px solid rgba(225,29,72,0.12)' }}>
+                              style={{ background: 'rgba(4,2,12,0.98)', borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
                               <div className="flex items-center gap-2.5">
                                 <div className="flex gap-1.5">
                                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(239,68,68,0.7)' }} />
                                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(234,179,8,0.7)' }} />
                                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(34,197,94,0.7)' }} />
                                 </div>
-                                <span className="text-xs font-mono font-medium" style={{ color: '#e11d48' }}>
+                                <span className="text-xs font-mono font-medium" style={{ color: '#a78bfa' }}>
                                   {match[1]}
                                 </span>
                               </div>
@@ -363,9 +314,8 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
                 </div>
               </div>
 
-              {/* Bottom glow */}
               <div className="absolute bottom-0 left-0 right-0 h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(225,29,72,0.15), transparent)' }} />
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.15), transparent)' }} />
             </div>
           )
         )}
@@ -373,7 +323,7 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
         {/* Action bar */}
         {!isStreaming && message.content && (
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 px-1">
-            <ActionBtn onClick={() => setLiked(liked === 'up' ? null : 'up')} active={liked === 'up'} activeColor="#4ade80" title="Beğen">
+            <ActionBtn onClick={() => setLiked(liked === 'up' ? null : 'up')} active={liked === 'up'} activeColor="#34d399" title="Beğen">
               <ThumbsUp size={11} />
             </ActionBtn>
             <ActionBtn onClick={() => setLiked(liked === 'down' ? null : 'down')} active={liked === 'down'} activeColor="#f87171" title="Beğenme">
@@ -385,7 +335,7 @@ export default function MessageBubble({ message, isStreaming, onRegenerate, onPi
               </ActionBtn>
             )}
             {!isUser && (
-              <ActionBtn onClick={handleSpeak} active={speaking} activeColor="#fda4af" title={speaking ? 'Durdur' : 'Sesli oku'}>
+              <ActionBtn onClick={handleSpeak} active={speaking} activeColor="#a78bfa" title={speaking ? 'Durdur' : 'Sesli oku'}>
                 {speaking ? <VolumeX size={11} /> : <Volume2 size={11} />}
               </ActionBtn>
             )}
@@ -416,9 +366,9 @@ function ActionBtn({
     <button
       onClick={onClick} title={title}
       className="p-1.5 rounded-lg transition-all"
-      style={{ color: active ? activeColor : '#2a1820' }}
-      onMouseEnter={e => { e.currentTarget.style.color = activeColor; e.currentTarget.style.background = 'rgba(225,29,72,0.06)' }}
-      onMouseLeave={e => { e.currentTarget.style.color = active ? activeColor : '#2a1820'; e.currentTarget.style.background = 'transparent' }}
+      style={{ color: active ? activeColor : '#1e293b' }}
+      onMouseEnter={e => { e.currentTarget.style.color = activeColor; e.currentTarget.style.background = 'rgba(139,92,246,0.08)' }}
+      onMouseLeave={e => { e.currentTarget.style.color = active ? activeColor : '#1e293b'; e.currentTarget.style.background = 'transparent' }}
     >
       {children}
     </button>

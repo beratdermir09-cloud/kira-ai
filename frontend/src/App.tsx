@@ -469,17 +469,17 @@ export default function App() {
   const handleStop = () => { abortRef.current = true; setIsStreaming(false); setStreamingMessage(null) }
 
   if (authLoading) return (
-    <div className="min-h-screen flex items-center justify-center relative" style={{ background: '#020207' }}>
+    <div className="min-h-screen flex items-center justify-center relative" style={{ background: '#04030a' }}>
       <div className="ambient-orb-1" />
       <div className="ambient-orb-2" />
       <div className="text-center relative z-10">
         <div className="relative w-16 h-16 mx-auto mb-5">
           <div className="absolute inset-0 rounded-2xl blur-xl opacity-70"
-            style={{ background: 'linear-gradient(135deg, #e11d48, #f97316)' }} />
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #0891b2)' }} />
           <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #1a0810, #2a0c10)', border: '1px solid rgba(225,29,72,0.4)' }}>
+            style={{ background: 'linear-gradient(135deg, #1e1040, #0c2040)', border: '1px solid rgba(139,92,246,0.4)' }}>
             <div className="w-8 h-8 border-2 rounded-full animate-spin"
-              style={{ borderColor: 'rgba(225,29,72,0.2)', borderTopColor: '#e11d48' }} />
+              style={{ borderColor: 'rgba(124,58,237,0.2)', borderTopColor: '#7c3aed' }} />
           </div>
         </div>
         <p className="text-sm tracking-widest uppercase" style={{ color: '#3a2030' }}>Yükleniyor...</p>
@@ -490,8 +490,8 @@ export default function App() {
   if (!user && !isGuest) return <LoginPage onGuestLogin={() => setIsGuest(true)} />
 
   return (
-    <div className="flex h-screen overflow-hidden relative" style={{ background: '#020207' }}>
-      {/* Animated ambient red lights */}
+    <div className="flex h-screen overflow-hidden relative" style={{ background: '#04030a' }}>
+      {/* Animated ambient lights */}
       <div className="ambient-orb-1" />
       <div className="ambient-orb-2" />
       <div className="ambient-orb-3" />

@@ -59,7 +59,7 @@ export default function Header({
   const activePersonality = PERSONALITIES.find(p => p.id === personality) || PERSONALITIES[0]
 
   const Btn = ({
-    onClick, children, title: t, hoverColor = '#fda4af', active = false,
+    onClick, children, title: t, hoverColor = '#a78bfa', active = false,
   }: {
     onClick: () => void; children: React.ReactNode; title?: string
     hoverColor?: string; active?: boolean
@@ -69,12 +69,12 @@ export default function Header({
       title={t}
       className="p-1.5 rounded-xl transition-all"
       style={{
-        background: active ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.04)',
-        border: `1px solid ${active ? 'rgba(225,29,72,0.35)' : 'rgba(225,29,72,0.1)'}`,
-        color: active ? '#fda4af' : '#4a4060',
+        background: active ? 'rgba(124,58,237,0.12)' : 'rgba(139,92,246,0.04)',
+        border: `1px solid ${active ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.1)'}`,
+        color: active ? '#a78bfa' : '#4a3a6a',
       }}
       onMouseEnter={e => (e.currentTarget.style.color = hoverColor)}
-      onMouseLeave={e => (e.currentTarget.style.color = active ? '#fda4af' : '#4a4060')}
+      onMouseLeave={e => (e.currentTarget.style.color = active ? '#a78bfa' : '#4a3a6a')}
     >
       {children}
     </button>
@@ -122,14 +122,14 @@ export default function Header({
       <div
         className="flex items-center justify-between px-4 py-2.5 relative"
         style={{
-          background: 'rgba(4,3,8,0.97)',
-          borderBottom: '1px solid rgba(225,29,72,0.08)',
+          background: 'rgba(4,3,10,0.97)',
+          borderBottom: '1px solid rgba(139,92,246,0.1)',
           backdropFilter: 'blur(20px)',
         }}
       >
         {/* Glow line top */}
         <div className="absolute top-0 left-0 right-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(225,29,72,0.3), transparent)' }} />
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.4), rgba(6,182,212,0.3), transparent)' }} />
 
         {/* Left */}
         <div className="flex items-center gap-2.5 min-w-0">
@@ -200,9 +200,11 @@ export default function Header({
         <div
           className="absolute right-4 top-14 z-50 rounded-2xl p-5 w-80 shadow-2xl"
           style={{
-            background: 'rgba(6,4,12,0.98)',
-            border: '1px solid rgba(225,29,72,0.2)',
+            background: 'rgba(6,4,14,0.98)',
+            border: '1px solid rgba(139,92,246,0.2)',
             backdropFilter: 'blur(40px)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(124,58,237,0.06)',
+          }}
             boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(225,29,72,0.06)',
           }}
         >

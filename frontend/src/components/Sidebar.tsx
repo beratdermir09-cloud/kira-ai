@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import {
-  Plus, MessageSquare, Trash2, Edit2, Check, X, Bot,
-  Search, Pin, Sparkles, FolderOpen, Folder, ChevronRight,
-  ChevronDown as ChevronDownIcon, Tag,
+  Plus, MessageSquare, Trash2, Edit2, Check, X,
+  Search, Pin, Sparkles,
+  Tag,
 } from 'lucide-react'
 import { Conversation } from '../types'
 import UserMenu from './UserMenu'
@@ -84,14 +84,14 @@ export default function Sidebar({
         className="sidebar-item group flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all relative"
         style={{
           background: isActive
-            ? 'linear-gradient(135deg, rgba(225,29,72,0.1), rgba(249,115,22,0.06))'
+            ? 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(8,145,178,0.06))'
             : 'transparent',
-          border: `1px solid ${isActive ? 'rgba(225,29,72,0.25)' : 'transparent'}`,
-          color: isActive ? '#fda4af' : '#6b7280',
+          border: `1px solid ${isActive ? 'rgba(139,92,246,0.3)' : 'transparent'}`,
+          color: isActive ? '#a78bfa' : '#6b7280',
         }}
         onMouseEnter={e => {
           if (!isActive) {
-            e.currentTarget.style.background = 'rgba(225,29,72,0.04)'
+            e.currentTarget.style.background = 'rgba(139,92,246,0.05)'
             e.currentTarget.style.color = '#94a3b8'
           }
         }}
@@ -104,7 +104,7 @@ export default function Sidebar({
       >
         {isActive && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full"
-            style={{ background: 'linear-gradient(to bottom, #e11d48, #f97316)' }} />
+            style={{ background: 'linear-gradient(to bottom, #7c3aed, #0891b2)' }} />
         )}
         <MessageSquare size={11} className="shrink-0 opacity-40" />
         <div className="flex-1 min-w-0">
@@ -119,7 +119,7 @@ export default function Sidebar({
               }}
               onClick={e => e.stopPropagation()}
               className="w-full text-white text-xs px-2 py-0.5 rounded-lg outline-none"
-              style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.3)' }}
+              style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)' }}
             />
           ) : (
             <p className="text-xs truncate font-medium">{conv.title}</p>
@@ -162,38 +162,42 @@ export default function Sidebar({
   return (
     <div
       className="flex flex-col h-full w-[280px] sm:w-72 min-w-[280px] relative overflow-hidden"
-      style={{ background: 'rgba(4,3,8,0.99)', borderRight: '1px solid rgba(225,29,72,0.08)' }}
+      style={{ background: 'rgba(4,3,10,0.99)', borderRight: '1px solid rgba(139,92,246,0.1)' }}
     >
       {/* Scan line effect */}
       <div className="scan-line" />
 
       {/* Top ambient glow */}
       <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(225,29,72,0.06) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
 
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-4 relative"
-        style={{ borderBottom: '1px solid rgba(225,29,72,0.08)' }}>
+        style={{ borderBottom: '1px solid rgba(139,92,246,0.1)' }}>
         <div className="relative w-9 h-9 shrink-0">
           <div className="absolute inset-0 rounded-xl blur-lg opacity-60"
-            style={{ background: 'linear-gradient(135deg, #e11d48, #f97316)' }} />
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #0891b2)' }} />
           <div className="relative w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, #1a0810, #2a0c10)',
-              border: '1px solid rgba(225,29,72,0.4)',
-              boxShadow: '0 0 20px rgba(225,29,72,0.2)',
+              background: 'linear-gradient(135deg, #1e1040, #0c2040)',
+              border: '1px solid rgba(139,92,246,0.5)',
+              boxShadow: '0 0 20px rgba(124,58,237,0.25)',
             }}>
-            <Bot size={17} className="text-red-400" />
+            <Sparkles size={17} style={{ color: '#a78bfa' }} />
           </div>
         </div>
         <div>
-          <h1 className="font-bold text-sm leading-tight gradient-text flicker">Kira AI</h1>
-          <p className="text-[10px] tracking-wider" style={{ color: '#3a2030' }}>NEURAL v3.0</p>
+          <h1 className="font-bold text-sm leading-tight" style={{
+            background: 'linear-gradient(135deg, #a78bfa, #67e8f9)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>Kira AI</h1>
+          <p className="text-[10px] tracking-wider" style={{ color: '#2d1f4a' }}>NEURAL v3.0</p>
         </div>
         <div className="ml-auto">
           <div className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px]"
-            style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80' }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-glow" />
+            style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-glow" />
             <span>ONLINE</span>
           </div>
         </div>
@@ -205,11 +209,11 @@ export default function Sidebar({
           onClick={onCreate}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98] relative overflow-hidden group"
           style={{
-            background: 'linear-gradient(135deg, #e11d48, #f97316)',
-            boxShadow: '0 4px 20px rgba(225,29,72,0.3)',
+            background: 'linear-gradient(135deg, #7c3aed, #0891b2)',
+            boxShadow: '0 4px 20px rgba(124,58,237,0.35)',
           }}
-          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 28px rgba(225,29,72,0.55)')}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(225,29,72,0.3)')}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 28px rgba(124,58,237,0.55)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,58,237,0.35)')}
         >
           <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors" />
           <Plus size={16} />
@@ -218,9 +222,9 @@ export default function Sidebar({
         <button
           onClick={onSearch}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all"
-          style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.1)', color: '#4a4060' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(225,29,72,0.3)'; e.currentTarget.style.color = '#94a3b8' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(225,29,72,0.1)'; e.currentTarget.style.color = '#4a4060' }}
+          style={{ background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.12)', color: '#4a3a6a' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.35)'; e.currentTarget.style.color = '#94a3b8' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = '#4a3a6a' }}
         >
           <Search size={13} />
           <span className="text-xs">Mesajlarda ara... <kbd>Ctrl+F</kbd></span>
