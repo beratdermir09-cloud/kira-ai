@@ -11,6 +11,7 @@ from database import get_db
 from services import db_storage
 from services.ai_service import get_ai_response_stream, build_messages_for_api
 from services.file_processor import process_file, truncate_content
+from services.web_search_service import needs_web_search, build_search_context
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -96,6 +97,15 @@ async def chat_stream(
     if urls:
         url_content = await fetch_url_content(urls[0])
 
+    # Web araması — URL yoksa ve arama gerekiyorsa
+    web_search_context = None
+    if not urls and not (file and file.filename):
+        if needs_web_search(message):
+            try:
+                web_search_context = await build_search_context(message)
+            except Exception:
+                pass  # Arama hatası akışı bozmasın
+
     # Dosya yokken vision model seçilmişse normal modele geç
     if not image_base64 and model in VISION_MODELS:
         model = 'llama-3.3-70b-versatile'
@@ -136,6 +146,9 @@ async def chat_stream(
 
     if url_content:
         extra += f"\n\n🔗 **URL İçeriği:**\n{url_content}"
+
+    if web_search_context:
+        extra += f"\n\n{web_search_context}"
 
     # ── GUEST ──────────────────────────────────────────────────
     if user_id == "guest":
