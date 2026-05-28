@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronDown, Download, Trash2, X, Share2, Keyboard, Sun, Moon, Sliders, Menu, GitCompare } from 'lucide-react'
+import { ChevronDown, Download, X, Keyboard, Sliders, Menu, GitCompare } from 'lucide-react'
 import { Model, Conversation, KiraPersonality } from '../types'
 
 const PERSONALITIES: { id: KiraPersonality; emoji: string; label: string; description: string }[] = [
@@ -7,6 +7,14 @@ const PERSONALITIES: { id: KiraPersonality; emoji: string; label: string; descri
   { id: 'serious',   emoji: '🎯', label: 'Ciddi',      description: 'Profesyonel, net, emojisiz' },
   { id: 'funny',     emoji: '😄', label: 'Esprili',    description: 'Neşeli, eğlenceli, komik' },
   { id: 'technical', emoji: '⚙️', label: 'Teknik',     description: 'Derin, detaylı, uzman' },
+]
+
+const SHORTCUTS = [
+  { keys: ['Ctrl', 'K'], desc: 'Yeni sohbet oluştur' },
+  { keys: ['Ctrl', 'F'], desc: 'Mesajlarda ara' },
+  { keys: ['Enter'],     desc: 'Mesaj gönder' },
+  { keys: ['Shift', 'Enter'], desc: 'Yeni satır' },
+  { keys: ['Esc'],       desc: 'Modalı kapat' },
 ]
 
 interface HeaderProps {
@@ -30,7 +38,6 @@ interface HeaderProps {
   compareModelB?: string
   onCompareModelAChange?: (m: string) => void
   onCompareModelBChange?: (m: string) => void
-  // Kişilik — sadece giriş yapanlara göster
   personality?: KiraPersonality
   onPersonalityChange?: (p: KiraPersonality) => void
   isGuest?: boolean
@@ -38,15 +45,16 @@ interface HeaderProps {
 
 export default function Header({
   title, models, selectedModel, onModelChange,
-  conversation, onClearChat, onExport, onShare,
+  conversation, onExport,
   temperature, onTemperatureChange,
-  darkMode, onToggleTheme, onShowShortcuts, onMenuClick,
+  onMenuClick,
   compareMode, onToggleCompare,
   compareModelA, compareModelB,
   onCompareModelAChange, onCompareModelBChange,
   personality = 'default', onPersonalityChange, isGuest = false,
 }: HeaderProps) {
   const [showSettings, setShowSettings] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'general' | 'compare' | 'shortcuts'>('general')
   const hasMessages = (conversation?.messages?.length ?? 0) > 0
   const activePersonality = PERSONALITIES.find(p => p.id === personality) || PERSONALITIES[0]
 
@@ -59,7 +67,7 @@ export default function Header({
     <button
       onClick={onClick}
       title={t}
-      className="p-1.5 rounded-xl transition-all tooltip"
+      className="p-1.5 rounded-xl transition-all"
       style={{
         background: active ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.04)',
         border: `1px solid ${active ? 'rgba(225,29,72,0.35)' : 'rgba(225,29,72,0.1)'}`,
@@ -95,6 +103,20 @@ export default function Header({
     </div>
   )
 
+  const Tab = ({ id, label }: { id: typeof settingsTab; label: string }) => (
+    <button
+      onClick={() => setSettingsTab(id)}
+      className="flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-all"
+      style={{
+        background: settingsTab === id ? 'rgba(225,29,72,0.12)' : 'transparent',
+        color: settingsTab === id ? '#fda4af' : '#4a4060',
+        border: settingsTab === id ? '1px solid rgba(225,29,72,0.3)' : '1px solid transparent',
+      }}
+    >
+      {label}
+    </button>
+  )
+
   return (
     <div className="relative">
       <div
@@ -123,10 +145,10 @@ export default function Header({
           <h2 className="font-semibold text-sm truncate max-w-[130px] sm:max-w-[200px]" style={{ color: '#e2e8f0' }}>
             {title}
           </h2>
-          {/* Aktif kişilik badge — sadece giriş yapanlara, default değilse */}
+          {/* Aktif kişilik badge */}
           {!isGuest && personality && personality !== 'default' && (
             <button
-              onClick={() => setShowSettings(true)}
+              onClick={() => { setShowSettings(true); setSettingsTab('general') }}
               className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-mono tracking-wider transition-all"
               style={{
                 background: 'rgba(225,29,72,0.08)',
@@ -161,24 +183,14 @@ export default function Header({
             </div>
           )}
 
-          <Btn onClick={() => onToggleCompare?.()} title="Model Karşılaştır" active={compareMode} hoverColor="#fb923c">
-            <GitCompare size={14} />
-          </Btn>
           <Btn onClick={() => setShowSettings(!showSettings)} title="Ayarlar" active={showSettings}>
             <Sliders size={14} />
           </Btn>
-          <Btn onClick={onToggleTheme} title="Tema" hoverColor="#fbbf24">
-            {darkMode ? <Sun size={14} /> : <Moon size={14} />}
-          </Btn>
-          <Btn onClick={onShowShortcuts} title="Kısayollar">
-            <Keyboard size={14} />
-          </Btn>
+
           {hasMessages && (
-            <>
-              <Btn onClick={onShare} title="Paylaş" hoverColor="#818cf8"><Share2 size={14} /></Btn>
-              <Btn onClick={onExport} title="Dışa aktar" hoverColor="#4ade80"><Download size={14} /></Btn>
-              <Btn onClick={onClearChat} title="Temizle" hoverColor="#f87171"><Trash2 size={14} /></Btn>
-            </>
+            <Btn onClick={onExport} title="Dışa aktar" hoverColor="#4ade80">
+              <Download size={14} />
+            </Btn>
           )}
         </div>
       </div>
@@ -186,7 +198,7 @@ export default function Header({
       {/* Settings panel */}
       {showSettings && (
         <div
-          className="absolute right-4 top-14 z-50 rounded-2xl p-5 w-72 shadow-2xl"
+          className="absolute right-4 top-14 z-50 rounded-2xl p-5 w-80 shadow-2xl"
           style={{
             background: 'rgba(6,4,12,0.98)',
             border: '1px solid rgba(225,29,72,0.2)',
@@ -198,7 +210,8 @@ export default function Header({
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(225,29,72,0.5), transparent)' }} />
 
-          <div className="flex items-center justify-between mb-5">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm text-white flex items-center gap-2">
               <Sliders size={13} style={{ color: '#e11d48' }} />
               Ayarlar
@@ -210,73 +223,139 @@ export default function Header({
             </button>
           </div>
 
-          {/* Temperature */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-xs font-medium" style={{ color: '#94a3b8' }}>Yaratıcılık</label>
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: 'rgba(225,29,72,0.1)', color: '#fda4af' }}>
-                {temperature.toFixed(1)}
-              </span>
-            </div>
-            <input type="range" min="0" max="1" step="0.1" value={temperature}
-              onChange={e => onTemperatureChange(parseFloat(e.target.value))} className="w-full" />
-            <div className="flex justify-between text-[10px] mt-2" style={{ color: '#2a1820' }}>
-              <span>Kesin</span><span>Yaratıcı</span>
-            </div>
+          {/* Tabs */}
+          <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.08)' }}>
+            <Tab id="general"   label="Genel" />
+            <Tab id="compare"   label="Karşılaştır" />
+            <Tab id="shortcuts" label="Kısayollar" />
           </div>
 
-          {/* Kişilik Seçici — sadece giriş yapanlara */}
-          {!isGuest && onPersonalityChange && (
-            <div className="mb-5">
-              <label className="text-xs font-medium block mb-3" style={{ color: '#94a3b8' }}>
-                Kira'nın Kişiliği
-              </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {PERSONALITIES.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => onPersonalityChange(p.id)}
-                    className="flex flex-col items-start px-3 py-2.5 rounded-xl text-left transition-all"
-                    style={{
-                      background: personality === p.id ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.03)',
-                      border: `1px solid ${personality === p.id ? 'rgba(225,29,72,0.45)' : 'rgba(225,29,72,0.1)'}`,
-                    }}
-                    onMouseEnter={e => {
-                      if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.3)'
-                    }}
-                    onMouseLeave={e => {
-                      if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.1)'
-                    }}
-                  >
-                    <span className="text-base mb-0.5">{p.emoji}</span>
-                    <span className="text-xs font-semibold" style={{ color: personality === p.id ? '#fda4af' : '#94a3b8' }}>
-                      {p.label}
-                    </span>
-                    <span className="text-[10px] leading-tight mt-0.5" style={{ color: '#3a2030' }}>
-                      {p.description}
-                    </span>
-                  </button>
-                ))}
+          {/* ── GENEL TAB ── */}
+          {settingsTab === 'general' && (
+            <>
+              {/* Temperature */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-xs font-medium" style={{ color: '#94a3b8' }}>Yaratıcılık</label>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
+                    style={{ background: 'rgba(225,29,72,0.1)', color: '#fda4af' }}>
+                    {temperature.toFixed(1)}
+                  </span>
+                </div>
+                <input type="range" min="0" max="1" step="0.1" value={temperature}
+                  onChange={e => onTemperatureChange(parseFloat(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-[10px] mt-2" style={{ color: '#2a1820' }}>
+                  <span>Kesin</span><span>Yaratıcı</span>
+                </div>
               </div>
+
+              {/* Kişilik Seçici */}
+              {!isGuest && onPersonalityChange && (
+                <div>
+                  <label className="text-xs font-medium block mb-3" style={{ color: '#94a3b8' }}>
+                    Kira'nın Kişiliği
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {PERSONALITIES.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => onPersonalityChange(p.id)}
+                        className="flex flex-col items-start px-3 py-2.5 rounded-xl text-left transition-all"
+                        style={{
+                          background: personality === p.id ? 'rgba(225,29,72,0.12)' : 'rgba(225,29,72,0.03)',
+                          border: `1px solid ${personality === p.id ? 'rgba(225,29,72,0.45)' : 'rgba(225,29,72,0.1)'}`,
+                        }}
+                        onMouseEnter={e => { if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.3)' }}
+                        onMouseLeave={e => { if (personality !== p.id) e.currentTarget.style.borderColor = 'rgba(225,29,72,0.1)' }}
+                      >
+                        <span className="text-base mb-0.5">{p.emoji}</span>
+                        <span className="text-xs font-semibold" style={{ color: personality === p.id ? '#fda4af' : '#94a3b8' }}>
+                          {p.label}
+                        </span>
+                        <span className="text-[10px] leading-tight mt-0.5" style={{ color: '#3a2030' }}>
+                          {p.description}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── KARŞILAŞTIR TAB ── */}
+          {settingsTab === 'compare' && (
+            <div>
+              <p className="text-xs mb-4" style={{ color: '#4a4060' }}>
+                Aynı soruyu iki farklı modele aynı anda sor, yanıtları yan yana gör.
+              </p>
+
+              {/* Model seçiciler */}
+              <div className="space-y-3 mb-5">
+                <div>
+                  <label className="text-[10px] font-mono mb-1.5 block" style={{ color: '#4a4060' }}>MODEL A</label>
+                  <div className="relative">
+                    <select
+                      value={compareModelA || selectedModel}
+                      onChange={e => onCompareModelAChange?.(e.target.value)}
+                      className="w-full appearance-none text-xs px-3 py-2 pr-7 rounded-xl outline-none cursor-pointer"
+                      style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.15)', color: '#94a3b8' }}
+                    >
+                      {models.map(m => <option key={m.id} value={m.id} style={{ background: '#0a0812' }}>{m.name}</option>)}
+                    </select>
+                    <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4a4060' }} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono mb-1.5 block" style={{ color: '#4a4060' }}>MODEL B</label>
+                  <div className="relative">
+                    <select
+                      value={compareModelB || selectedModel}
+                      onChange={e => onCompareModelBChange?.(e.target.value)}
+                      className="w-full appearance-none text-xs px-3 py-2 pr-7 rounded-xl outline-none cursor-pointer"
+                      style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.15)', color: '#94a3b8' }}
+                    >
+                      {models.map(m => <option key={m.id} value={m.id} style={{ background: '#0a0812' }}>{m.name}</option>)}
+                    </select>
+                    <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4a4060' }} />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { onToggleCompare?.(); setShowSettings(false) }}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+                style={{
+                  background: compareMode ? 'rgba(225,29,72,0.15)' : 'linear-gradient(135deg, rgba(225,29,72,0.8), rgba(249,115,22,0.8))',
+                  border: '1px solid rgba(225,29,72,0.4)',
+                  color: compareMode ? '#fda4af' : 'white',
+                }}
+              >
+                <GitCompare size={12} className="inline mr-1.5" />
+                {compareMode ? 'Karşılaştırmayı Kapat' : 'Karşılaştırmayı Başlat'}
+              </button>
             </div>
           )}
 
-          {/* Compare mode info */}
-          <div className="rounded-xl p-3" style={{ background: 'rgba(225,29,72,0.04)', border: '1px solid rgba(225,29,72,0.1)' }}>
-            <div className="flex items-center gap-2 mb-1">
-              <GitCompare size={12} style={{ color: '#e11d48' }} />
-              <span className="text-xs font-medium" style={{ color: '#fda4af' }}>Model Karşılaştırma</span>
+          {/* ── KISAYOLLAR TAB ── */}
+          {settingsTab === 'shortcuts' && (
+            <div className="space-y-2.5">
+              {SHORTCUTS.map((s, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg"
+                  style={{ background: 'rgba(225,29,72,0.03)' }}>
+                  <span className="text-xs" style={{ color: '#94a3b8' }}>{s.desc}</span>
+                  <div className="flex items-center gap-1">
+                    {s.keys.map((k, j) => (
+                      <kbd key={j} className="px-2 py-0.5 rounded text-[10px] font-mono"
+                        style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.2)', color: '#fda4af' }}>
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-[10px]" style={{ color: '#3a2030' }}>
-              Aynı soruyu iki farklı modele aynı anda sor, yanıtları yan yana gör.
-            </p>
-          </div>
-
-          <div className="mt-4 pt-4 text-[10px]"
-            style={{ borderTop: '1px solid rgba(225,29,72,0.08)', color: '#2a1820' }}>
-            Düşük = tutarlı · Yüksek = yaratıcı
-          </div>
+          )}
         </div>
       )}
     </div>
