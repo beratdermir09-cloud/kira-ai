@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { Send, Paperclip, X, StopCircle, Mic, MicOff, BookOpen, GitCompare } from 'lucide-react'
-import { useSpeechRecognition } from '../hooks/useSpeech'
+import { Send, Paperclip, X, StopCircle, Mic, MicOff, BookOpen, GitCompare, Radio } from 'lucide-react'
+import { useSpeechRecognition, useVoiceChat } from '../hooks/useSpeech'
 
 interface ChatInputProps {
   onSend: (message: string, file: File | null) => void
@@ -11,6 +11,8 @@ interface ChatInputProps {
   onGuestLimitClick?: () => void
   compareMode?: boolean
   onCompare?: (prompt: string) => void
+  onVoiceSend?: (text: string) => void   // voice chat için
+  lastAiResponse?: string                 // sesli okuma için
 }
 
 const ACCEPTED_TYPES = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.py,.js,.ts,.html,.css,.xml,.jpg,.jpeg,.png,.gif,.webp'
@@ -56,7 +58,7 @@ const TEMPLATE_CATEGORIES = [
 
 export default function ChatInput({
   onSend, isLoading, onStop, disabled, guestLimitReached, onGuestLimitClick,
-  compareMode, onCompare,
+  compareMode, onCompare, onVoiceSend, lastAiResponse,
 }: ChatInputProps) {
   const [message, setMessage] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -68,6 +70,24 @@ export default function ChatInput({
 
   const { listening, start: startListening, stop: stopListening, supported: speechSupported } =
     useSpeechRecognition((text) => setMessage(prev => prev + (prev ? ' ' : '') + text))
+
+  // Gerçek zamanlı voice chat
+  const voiceChat = useVoiceChat({
+    onSend: (text) => {
+      if (onVoiceSend) onVoiceSend(text)
+      else onSend(text, null)
+    },
+    onTranscript: (text) => setMessage(text),
+    autoSpeak: true,
+    silenceMs: 1500,
+  })
+
+  // AI cevabı gelince sesli oku (voice chat aktifse)
+  useEffect(() => {
+    if (voiceChat.active && lastAiResponse && !isLoading) {
+      voiceChat.speakResponse(lastAiResponse)
+    }
+  }, [lastAiResponse, isLoading])
 
   useEffect(() => {
     const ta = textareaRef.current
@@ -152,6 +172,33 @@ export default function ChatInput({
           <span className="text-xs" style={{ color: '#a78bfa' }}>
             Karşılaştırma modu — mesajın iki modele aynı anda gönderilecek
           </span>
+        </div>
+      )}
+
+      {/* Voice chat status banner */}
+      {voiceChat.active && (
+        <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl"
+          style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
+          <div className="flex gap-1">
+            {[0, 150, 300].map(d => (
+              <div key={d} className="w-1.5 h-1.5 rounded-full bounce-dot"
+                style={{ background: voiceChat.status === 'listening' ? '#a78bfa' : '#67e8f9', animationDelay: `${d}ms` }} />
+            ))}
+          </div>
+          <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>
+            {voiceChat.status === 'listening' ? '🎙 Dinliyorum...' :
+             voiceChat.status === 'processing' ? '⚡ Gönderiliyor...' :
+             voiceChat.speaking ? '🔊 Kira konuşuyor...' : '🎙 Hazır'}
+          </span>
+          {voiceChat.transcript && (
+            <span className="text-xs truncate max-w-[200px]" style={{ color: '#67e8f9' }}>
+              "{voiceChat.transcript}"
+            </span>
+          )}
+          <button onClick={voiceChat.stop} className="ml-auto text-xs px-2 py-0.5 rounded-lg transition-all"
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
+            Kapat
+          </button>
         </div>
       )}
 
@@ -299,6 +346,23 @@ export default function ChatInput({
             style={{ color: listening ? '#f87171' : '#2d1f4a', background: listening ? 'rgba(248,113,113,0.08)' : 'transparent' }}
             title={listening ? 'Durdur' : 'Sesli giriş'}>
             {listening ? <MicOff size={16} /> : <Mic size={16} />}
+          </button>
+        )}
+
+        {/* Gerçek zamanlı voice chat butonu */}
+        {voiceChat.supported && !compareMode && (
+          <button
+            onClick={voiceChat.active ? voiceChat.stop : voiceChat.start}
+            disabled={isLoading || isDisabled}
+            className="shrink-0 p-1.5 rounded-lg transition-all mb-0.5 disabled:opacity-40"
+            style={{
+              color: voiceChat.active ? '#a78bfa' : '#2d1f4a',
+              background: voiceChat.active ? 'rgba(124,58,237,0.15)' : 'transparent',
+              border: voiceChat.active ? '1px solid rgba(139,92,246,0.4)' : '1px solid transparent',
+            }}
+            title={voiceChat.active ? 'Sesli sohbeti kapat' : 'Sesli sohbet başlat'}
+          >
+            <Radio size={16} />
           </button>
         )}
 

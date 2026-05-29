@@ -33,6 +33,7 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile')
   const [temperature, setTemperature] = useState(0.7)
   const [personality, setPersonality] = useState<KiraPersonality>('default')
+  const [lastAiResponse, setLastAiResponse] = useState<string>('')
 
   const [showSearch, setShowSearch] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -377,6 +378,7 @@ export default function App() {
         timestamp: new Date().toISOString(), is_pinned: false
       }
 
+      setLastAiResponse(fullContent)
       setStreamingMessage(null)
       setIsStreaming(false)
 
@@ -574,6 +576,8 @@ export default function App() {
           onGuestLimitClick={() => setShowGuestLimitModal(true)}
           compareMode={compareMode}
           onCompare={handleCompare}
+          onVoiceSend={(text) => handleSend(text, null)}
+          lastAiResponse={lastAiResponse}
         />
       </div>
 
