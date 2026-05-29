@@ -21,27 +21,44 @@ from bs4 import BeautifulSoup
 
 # Web araması gerektiren anahtar kelimeler / kalıplar
 SEARCH_TRIGGERS = [
-    # Güncellik
-    r'\b(bugün|dün|bu hafta|bu ay|bu yıl|şu an|şu anda|son|güncel|yeni|2024|2025|2026)\b',
-    r'\b(today|yesterday|this week|this month|this year|now|current|latest|new|recent)\b',
-    # Soru kalıpları
-    r'\b(nedir|ne zaman|kim|nerede|nasıl|kaç|fiyat|ücret|maaş|kur|döviz|hava|hisse)\b',
-    r'\b(what is|when|who|where|how much|price|cost|salary|exchange rate|weather|stock)\b',
-    # Haber / olay
-    r'\b(haber|gelişme|olay|son dakika|breaking|news|event|happened|update)\b',
-    # Ürün / teknoloji
-    r'\b(çıktı mı|piyasaya|release|launched|announced|version|update|patch)\b',
-    # Araştırma
-    r'\b(araştır|bul|search|find|look up|check)\b',
-    # Spor / sonuç
-    r'\b(skor|maç|sonuç|puan|lig|score|match|result|standings|league)\b',
+    # Güncellik — tarih/zaman içeren sorular
+    r'\b(bugünkü|dünkü|bu haftaki|bu ayki|bu yılki|şu anki|güncel|son dakika|breaking)\b',
+    r'\b(today\'s|yesterday\'s|this week\'s|current|latest|breaking news|recent)\b',
+    # Fiyat / kur / borsa
+    r'\b(fiyat|ücret|kaç lira|kaç dolar|kaç euro|döviz kuru|dolar kaç|euro kaç|altın fiyat|hisse|borsa|bitcoin|kripto)\b',
+    r'\b(price|cost|how much|exchange rate|stock price|bitcoin price|crypto)\b',
+    # Hava durumu
+    r'\b(hava durumu|hava nasıl|sıcaklık kaç|yağmur yağacak mı)\b',
+    r'\b(weather|temperature|forecast|will it rain)\b',
+    # Spor sonuçları
+    r'\b(maç sonucu|skor|puan tablosu|lig sıralaması|şampiyon kim)\b',
+    r'\b(match result|score|standings|league table|who won)\b',
+    # Haber / son gelişme
+    r'\b(son haberler|son gelişme|ne oldu|neler oluyor|gündem)\b',
+    r'\b(latest news|what happened|current events|breaking)\b',
+    # Ürün / teknoloji çıkış tarihi
+    r'\b(ne zaman çıktı|ne zaman çıkacak|yeni sürüm|son sürüm|güncel sürüm)\b',
+    r'\b(release date|when did .* come out|latest version|new version)\b',
+    # Açık araştırma isteği
+    r'\b(araştır|araştırır mısın|bul|search for|look up|find out)\b',
 ]
 
-# Bu konular web araması gerektirmez
+# Bu konular web araması gerektirmez — kesinlikle arama yapma
 NO_SEARCH_PATTERNS = [
-    r'\b(kod yaz|yaz bana|oluştur|üret|çiz|anlat|açıkla|özetle|çevir|düzelt)\b',
-    r'\b(write code|create|generate|draw|explain|summarize|translate|fix)\b',
+    # Kod yazma / üretim görevleri
+    r'\b(kod yaz|yaz bana|oluştur|üret|çiz|anlat|açıkla|özetle|çevir|düzelt|yardım et)\b',
+    r'\b(write code|create|generate|draw|explain|summarize|translate|fix|help me)\b',
+    # Görsel oluşturma
     r'\[IMAGE_GEN',
+    r'\b(resim yap|görsel oluştur|çizim yap|fotoğraf)\b',
+    # Sohbet / kişisel sorular
+    r'\b(nasılsın|ne yapıyorsun|naber|selam|merhaba|iyi misin|ne düşünüyorsun|fikrin ne|bence|sence)\b',
+    r'\b(how are you|what do you think|your opinion|do you like|tell me about yourself)\b',
+    # Matematik / mantık
+    r'\b(hesapla|kaç eder|çarp|böl|topla|çıkar|integral|türev|denklem)\b',
+    r'\b(calculate|compute|solve|equation|derivative|integral)\b',
+    # Tarih / genel bilgi (güncel değil)
+    r'\b(tarihte|tarihçe|kim icat etti|ne zaman icat|hangi yılda|kim kurdu)\b',
 ]
 
 # Güvenilir kaynak domainleri (öncelikli)
@@ -62,10 +79,14 @@ SKIP_DOMAINS = [
 
 
 def needs_web_search(message: str) -> bool:
-    """Mesajın web araması gerektirip gerektirmediğini hızlıca kontrol et."""
-    msg_lower = message.lower()
+    """Mesajın web araması gerektirip gerektirmediğini kontrol et."""
+    msg_lower = message.lower().strip()
 
-    # Önce "arama gerektirmez" kalıplarını kontrol et
+    # Çok kısa mesajlar — arama yapma
+    if len(msg_lower) < 8:
+        return False
+
+    # Önce "arama gerektirmez" kalıplarını kontrol et — bunlar varsa kesinlikle arama yapma
     for pattern in NO_SEARCH_PATTERNS:
         if re.search(pattern, msg_lower, re.IGNORECASE):
             return False
@@ -74,10 +95,6 @@ def needs_web_search(message: str) -> bool:
     for pattern in SEARCH_TRIGGERS:
         if re.search(pattern, msg_lower, re.IGNORECASE):
             return True
-
-    # Soru işareti varsa ve kısa değilse ara
-    if '?' in message and len(message) > 15:
-        return True
 
     return False
 
