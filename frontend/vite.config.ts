@@ -7,13 +7,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
+      // Service worker her deploy'da güncellenir
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'Kira AI',
         short_name: 'Kira AI',
         description: 'Yapay zeka asistanın — her zaman yanında',
-        theme_color: '#020207',
-        background_color: '#020207',
+        theme_color: '#04030a',
+        background_color: '#04030a',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -36,20 +38,41 @@ export default defineConfig({
         lang: 'tr',
       },
       workbox: {
+        // Her deploy'da tüm cache'i temizle
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Eski cache'leri sil
+        cleanupOutdatedCaches: true,
+        // Yeni SW hemen devreye girsin, sekme yenileme beklemesin
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // API isteklerini ASLA cache'leme
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkOnly',
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],
       },
     }),
   ],
+  build: {
+    // Her build'de dosya adlarına hash ekle — cache busting
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+  },
   server: {
     port: 5173,
     host: true,
