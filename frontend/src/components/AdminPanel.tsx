@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   Shield, LogOut, Users, BarChart2, Eye, EyeOff, RefreshCw,
   AlertTriangle, Activity, MessageSquare, Lock, Sparkles,
-  TrendingUp, Clock, Search, Trash2, Crown, UserCheck,
-  Database, Zap, Globe, ChevronUp, ChevronDown,
+  TrendingUp, Clock, Search, Crown,
+  Database, Zap, Globe, ChevronUp, ChevronDown, ShieldAlert,
 } from 'lucide-react'
 
 const ADMIN_TOKEN_KEY = 'kira_admin_token'
@@ -23,6 +23,14 @@ interface User {
   created_at: string
   last_seen: string
   is_admin: boolean
+}
+
+interface SecurityData {
+  active_sessions: number
+  locked_ips: string[]
+  suspicious_ips: Record<string, number>
+  max_attempts: number
+  lockout_duration: number
 }
 
 function getApiBase() {
@@ -47,6 +55,7 @@ async function adminFetch(path: string, token: string, options: RequestInit = {}
 
 /* ── Login ── */
 function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -59,9 +68,9 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
       const res = await fetch(API + '/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Hatalı şifre') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Hatalı kullanıcı adı veya şifre') }
       const { token } = await res.json()
       localStorage.setItem(ADMIN_TOKEN_KEY, token)
       onLogin(token)
@@ -98,13 +107,33 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
             <p className="text-xs tracking-widest uppercase" style={{ color: '#2d1f4a' }}>Kira AI · Güvenli Erişim</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username field - ABOVE password */}
             <div className="relative">
-              <input type={show ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Admin şifresi" autoComplete="current-password"
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="Kullanıcı adı"
+                autoComplete="username"
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none text-white"
+                style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(139,92,246,0.2)', caretColor: '#7c3aed' }}
+                onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.5)')}
+                onBlur={e => (e.target.style.borderColor = 'rgba(139,92,246,0.2)')}
+              />
+            </div>
+            {/* Password field */}
+            <div className="relative">
+              <input
+                type={show ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Admin şifresi"
+                autoComplete="current-password"
                 className="w-full px-4 py-3 pr-12 rounded-xl text-sm outline-none text-white"
                 style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(139,92,246,0.2)', caretColor: '#7c3aed' }}
                 onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.5)')}
-                onBlur={e => (e.target.style.borderColor = 'rgba(139,92,246,0.2)')} />
+                onBlur={e => (e.target.style.borderColor = 'rgba(139,92,246,0.2)')}
+              />
               <button type="button" onClick={() => setShow(!show)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1" style={{ color: '#4a3a6a' }}>
                 {show ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -116,7 +145,7 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
                 <AlertTriangle size={12} />{error}
               </div>
             )}
-            <button type="submit" disabled={loading || !password}
+            <button type="submit" disabled={loading || !username || !password}
               className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg, #7c3aed, #0891b2)', boxShadow: '0 4px 20px rgba(124,58,237,0.3)' }}>
               {loading ? (
@@ -172,8 +201,10 @@ function MiniStat({ label, value, color }: { label: string; value: string | numb
 function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<User[]>([])
-  const [tab, setTab] = useState<'overview' | 'users' | 'system'>('overview')
+  const [security, setSecurity] = useState<SecurityData | null>(null)
+  const [tab, setTab] = useState<'overview' | 'users' | 'system' | 'security'>('overview')
   const [loading, setLoading] = useState(true)
+  const [securityLoading, setSecurityLoading] = useState(false)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'messages' | 'date'>('messages')
@@ -188,7 +219,21 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     finally { setLoading(false) }
   }, [token])
 
+  const loadSecurity = useCallback(async () => {
+    setSecurityLoading(true)
+    try {
+      const data = await adminFetch('/security', token)
+      setSecurity(data)
+    } catch (err: any) {
+      setSecurity(null)
+    } finally { setSecurityLoading(false) }
+  }, [token])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (tab === 'security') loadSecurity()
+  }, [tab, loadSecurity])
 
   const handleLogout = async () => {
     try { await adminFetch('/logout', token, { method: 'POST' }) } catch { }
@@ -212,9 +257,10 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
   const topUser = users.reduce((a, b) => a.total_messages > b.total_messages ? a : b, users[0])
 
   const TABS = [
-    { id: 'overview', label: 'Genel Bakış', icon: <BarChart2 size={14} /> },
-    { id: 'users',    label: 'Kullanıcılar', icon: <Users size={14} /> },
-    { id: 'system',   label: 'Sistem', icon: <Database size={14} /> },
+    { id: 'overview',  label: 'Genel Bakış',  icon: <BarChart2 size={14} /> },
+    { id: 'users',     label: 'Kullanıcılar', icon: <Users size={14} /> },
+    { id: 'system',    label: 'Sistem',        icon: <Database size={14} /> },
+    { id: 'security',  label: 'Güvenlik',      icon: <ShieldAlert size={14} /> },
   ]
 
   return (
@@ -297,7 +343,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
           ))}
         </div>
 
-        {loading ? (
+        {loading && tab !== 'security' ? (
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
               <div className="relative w-12 h-12 mx-auto mb-4">
@@ -314,16 +360,12 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             {/* ── GENEL BAKIŞ ── */}
             {tab === 'overview' && stats && (
               <div className="space-y-6">
-                {/* Ana istatistikler */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <StatCard icon={<Users size={18} style={{ color: '#a78bfa' }} />} label="Toplam Kullanıcı" value={stats.total_users} color="#7c3aed" sub="Kayıtlı" />
                   <StatCard icon={<MessageSquare size={18} style={{ color: '#67e8f9' }} />} label="Toplam Sohbet" value={stats.total_conversations} color="#0891b2" sub="Aktif" />
                   <StatCard icon={<Activity size={18} style={{ color: '#34d399' }} />} label="Toplam Mesaj" value={stats.total_messages} color="#10b981" sub="Gönderildi" />
                 </div>
-
-                {/* Detay kartları */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Kullanıcı analizi */}
                   <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(139,92,246,0.15)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <TrendingUp size={14} style={{ color: '#a78bfa' }} />
@@ -336,8 +378,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                       <MiniStat label="Mesaj/sohbet oranı" value={stats.total_conversations > 0 ? (stats.total_messages / stats.total_conversations).toFixed(1) : '0'} color="#f59e0b" />
                     </div>
                   </div>
-
-                  {/* En aktif kullanıcı */}
                   <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(139,92,246,0.15)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <Crown size={14} style={{ color: '#f59e0b' }} />
@@ -372,7 +412,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             {/* ── KULLANICILAR ── */}
             {tab === 'users' && (
               <div className="space-y-4">
-                {/* Arama + sıralama */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#4a3a6a' }} />
@@ -398,13 +437,9 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     ))}
                   </div>
                 </div>
-
-                {/* Kullanıcı sayısı */}
                 <p className="text-xs" style={{ color: '#4a3a6a' }}>
                   {filteredUsers.length} kullanıcı {search && `("${search}" için)`}
                 </p>
-
-                {/* Tablo */}
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(139,92,246,0.15)', background: 'rgba(8,6,18,0.8)' }}>
                   <div className="grid grid-cols-5 gap-3 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest"
                     style={{ background: 'rgba(124,58,237,0.06)', borderBottom: '1px solid rgba(139,92,246,0.1)', color: '#4a3a6a' }}>
@@ -464,7 +499,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             {tab === 'system' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Sistem bilgisi */}
                   <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(139,92,246,0.15)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <Database size={14} style={{ color: '#67e8f9' }} />
@@ -479,8 +513,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                       <MiniStat label="Hosting" value="Vercel + Railway" color="#06b6d4" />
                     </div>
                   </div>
-
-                  {/* Hızlı işlemler */}
                   <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(139,92,246,0.15)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <Zap size={14} style={{ color: '#f59e0b' }} />
@@ -511,8 +543,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     </div>
                   </div>
                 </div>
-
-                {/* Güvenlik notu */}
                 <div className="rounded-2xl p-4 flex items-start gap-3"
                   style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
                   <Shield size={14} style={{ color: '#f59e0b', marginTop: 1 }} />
@@ -524,6 +554,148 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ── GÜVENLİK ── */}
+            {tab === 'security' && (
+              <div className="space-y-4">
+                {securityLoading ? (
+                  <div className="flex items-center justify-center py-24">
+                    <div className="text-center">
+                      <div className="relative w-12 h-12 mx-auto mb-4">
+                        <div className="absolute inset-0 rounded-full border-2 animate-spin"
+                          style={{ borderColor: 'rgba(124,58,237,0.15)', borderTopColor: '#7c3aed' }} />
+                        <div className="absolute inset-2 rounded-full border-2 animate-spin"
+                          style={{ borderColor: 'rgba(8,145,178,0.15)', borderTopColor: '#0891b2', animationDirection: 'reverse', animationDuration: '0.8s' }} />
+                      </div>
+                      <p className="text-xs" style={{ color: '#4a3a6a' }}>Güvenlik verileri yükleniyor...</p>
+                    </div>
+                  </div>
+                ) : security ? (
+                  <>
+                    {/* Üst istatistik kartları */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <StatCard
+                        icon={<Activity size={18} style={{ color: '#34d399' }} />}
+                        label="Aktif Oturum"
+                        value={security.active_sessions}
+                        color="#10b981"
+                        sub="Canlı"
+                      />
+                      <StatCard
+                        icon={<Lock size={18} style={{ color: '#f87171' }} />}
+                        label="Kilitli IP"
+                        value={security.locked_ips.length}
+                        color="#ef4444"
+                        sub="Engelli"
+                      />
+                      <StatCard
+                        icon={<AlertTriangle size={18} style={{ color: '#f59e0b' }} />}
+                        label="Şüpheli IP"
+                        value={Object.keys(security.suspicious_ips).length}
+                        color="#f59e0b"
+                        sub="İzleniyor"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Kilitli IP'ler */}
+                      <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <Lock size={14} style={{ color: '#f87171' }} />
+                            <h3 className="text-sm font-semibold text-white">Kilitli IP'ler</h3>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono"
+                            style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+                            {security.locked_ips.length} engelli
+                          </span>
+                        </div>
+                        {security.locked_ips.length === 0 ? (
+                          <p className="text-xs py-4 text-center" style={{ color: '#4a3a6a' }}>Kilitli IP yok</p>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {security.locked_ips.map((ip, i) => (
+                              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl"
+                                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                                <span className="text-xs font-mono text-white/70">{ip}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                                  style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171' }}>
+                                  KİLİTLİ
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Şüpheli IP'ler */}
+                      <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle size={14} style={{ color: '#f59e0b' }} />
+                            <h3 className="text-sm font-semibold text-white">Şüpheli IP'ler</h3>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono"
+                            style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>
+                            {Object.keys(security.suspicious_ips).length} izleniyor
+                          </span>
+                        </div>
+                        {Object.keys(security.suspicious_ips).length === 0 ? (
+                          <p className="text-xs py-4 text-center" style={{ color: '#4a3a6a' }}>Şüpheli IP yok</p>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {Object.entries(security.suspicious_ips).map(([ip, count], i) => (
+                              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl"
+                                style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                                <span className="text-xs font-mono text-white/70">{ip}</span>
+                                <span className="text-xs font-mono font-semibold" style={{ color: '#f59e0b' }}>
+                                  {count} deneme
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Güvenlik ayarları */}
+                    <div className="rounded-2xl p-5" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                      <div className="flex items-center gap-2 mb-4">
+                        <ShieldAlert size={14} style={{ color: '#a78bfa' }} />
+                        <h3 className="text-sm font-semibold text-white">Güvenlik Ayarları</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <MiniStat label="Maksimum deneme sayısı" value={security.max_attempts} color="#a78bfa" />
+                        <MiniStat label="Kilitleme süresi (sn)" value={security.lockout_duration} color="#67e8f9" />
+                      </div>
+                    </div>
+
+                    {/* Yenile butonu */}
+                    <div className="flex justify-end">
+                      <button onClick={loadSecurity}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all"
+                        style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(139,92,246,0.2)', color: '#a78bfa' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.06)')}>
+                        <RefreshCw size={12} className={securityLoading ? 'animate-spin' : ''} />
+                        Güvenlik Verilerini Yenile
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl p-8 text-center" style={{ background: 'rgba(8,6,18,0.8)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <AlertTriangle size={32} className="mx-auto mb-3" style={{ color: '#f87171' }} />
+                    <p className="text-sm font-semibold text-white mb-1">Güvenlik verileri yüklenemedi</p>
+                    <p className="text-xs mb-4" style={{ color: '#6b7280' }}>Backend /security endpoint'i bulunamadı veya erişilemiyor.</p>
+                    <button onClick={loadSecurity}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium mx-auto transition-all"
+                      style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}>
+                      <RefreshCw size={12} />Tekrar Dene
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>
