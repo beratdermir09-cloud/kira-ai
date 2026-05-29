@@ -70,12 +70,21 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Hatalı kullanıcı adı veya şifre') }
+      if (!res.ok) {
+        let msg = 'Hatalı kullanıcı adı veya şifre'
+        try { const d = await res.json(); msg = d.detail || msg } catch { }
+        throw new Error(msg)
+      }
       const { token } = await res.json()
       localStorage.setItem(ADMIN_TOKEN_KEY, token)
       onLogin(token)
     } catch (err: any) {
-      setError(err.message || 'Giriş başarısız')
+      // Network hatası veya backend kapalı
+      if (err.message === 'Failed to fetch') {
+        setError('Backend bağlantısı kurulamadı. start.bat ile backend\'i başlatın.')
+      } else {
+        setError(err.message || 'Giriş başarısız')
+      }
     } finally { setLoading(false) }
   }
 
