@@ -140,9 +140,67 @@ async def get_users(db: AsyncSession = Depends(get_db), _=Depends(check_admin)):
     ]
 
 
-@router.get("/verify")
-async def verify_token(_=Depends(check_admin)):
-    return {"valid": True}
+@router.get("/activity")
+async def get_activity(db: AsyncSession = Depends(get_db), _=Depends(check_admin)):
+    """Son 50 mesajı döndür (kullanıcı bilgisiyle)."""
+    from sqlalchemy import select, desc
+    from database import Message, Conversation, User as DBUser
+
+    result = await db.execute(
+        select(Message, Conversation.title, DBUser.display_name, DBUser.email)
+        .join(Conversation, Message.conversation_id == Conversation.id)
+        .join(DBUser, Conversation.user_id == DBUser.id)
+        .where(Message.role == 'user')
+        .order_by(desc(Message.created_at))
+        .limit(50)
+    )
+    rows = result.all()
+
+    from services.encryption import decrypt_text
+    activity = []
+    for msg, conv_title, display_name, email in rows:
+        try:
+            content = decrypt_text(msg.content)[:120]
+        except Exception:
+            content = '(şifreli)'
+        activity.append({
+            "id": msg.id,
+            "user": display_name or email or 'Anonim',
+            "content": content,
+            "conversation": conv_title,
+            "created_at": msg.created_at.isoformat(),
+        })
+    return activity
+
+
+@router.get("/health")
+async def get_health(db: AsyncSession = Depends(get_db), _=Depends(check_admin)):
+    """Sistem sağlık durumu."""
+    import time as time_module
+    start = time_module.time()
+
+    # DB bağlantı testi
+    db_ok = False
+    try:
+        from sqlalchemy import text
+        await db.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        pass
+
+    db_latency = round((time_module.time() - start) * 1000, 1)
+
+    # Groq API testi
+    groq_ok = bool(os.getenv("GROQ_API_KEY"))
+
+    return {
+        "db_connected": db_ok,
+        "db_latency_ms": db_latency,
+        "groq_configured": groq_ok,
+        "active_sessions": len(_active_sessions),
+        "model": os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
+        "environment": "production" if os.getenv("DATABASE_URL") else "local",
+    }
 
 
 @router.get("/security")
@@ -163,3 +221,8 @@ async def get_security_info(_=Depends(check_admin)):
         "max_attempts": MAX_ATTEMPTS,
         "lockout_minutes": LOCKOUT_WINDOW // 60,
     }
+
+
+@router.get("/verify")
+async def verify_token(_=Depends(check_admin)):
+    return {"valid": True}
