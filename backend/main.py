@@ -17,14 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Kira AI API", version="3.0.0", lifespan=lifespan)
 
-# Middleware sırası önemli: FastAPI LIFO (son eklenen ilk çalışır)
-# Auth önce eklenmeli ki CORS sonra (dışta) çalışsın
-
-from services.auth import auth_middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)
-
-# CORS en son eklenir = en dışta çalışır = her isteğe CORS header ekler
+# CORS — BaseHTTPMiddleware ile çakışmaması için tek middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,6 +27,9 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=86400,
 )
+
+# NOT: auth_middleware kaldırıldı — BaseHTTPMiddleware CORS header'larını bozuyordu.
+# Her route kendi auth kontrolünü yapıyor (x-user-id header veya check_admin dependency).
 
 app.include_router(conversations.router)
 app.include_router(chat.router)
