@@ -81,7 +81,7 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
       const { token } = await res.json()
       localStorage.setItem(ADMIN_TOKEN_KEY, token); onLogin(token)
     } catch (err: any) {
-      setError(err.message === 'Failed to fetch' ? 'Backend kapalı. start.bat ile başlatın.' : err.message || 'Giriş başarısız')
+      setError(err.message === 'Failed to fetch' ? 'Sunucuya bağlanılamadı. Lütfen bekleyin veya sayfayı yenileyin.' : err.message || 'Giriş başarısız')
     } finally { setLoading(false) }
   }
 
@@ -161,7 +161,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     try {
       const [s, u] = await Promise.all([adminFetch('/stats', token), adminFetch('/users', token)])
       setStats(s); setUsers(u)
-    } catch (err: any) { setError(err.message === 'Failed to fetch' ? 'Backend kapalı. start.bat ile başlatın.' : 'Veri yüklenemedi: ' + err.message) }
+    } catch (err: any) { setError(err.message === 'Failed to fetch' ? 'Sunucuya bağlanılamadı. Lütfen bekleyin veya sayfayı yenileyin.' : 'Veri yüklenemedi: ' + err.message) }
     finally { setLoading(false) }
   }, [token])
 
