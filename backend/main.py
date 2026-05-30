@@ -17,25 +17,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Kira AI API", version="3.0.0", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://kiragpt.vercel.app",
-        "https://kira-ai.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "*",
-    ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=3600,
-)
+# Middleware sırası önemli: FastAPI LIFO (son eklenen ilk çalışır)
+# Auth önce eklenmeli ki CORS sonra (dışta) çalışsın
 
 from services.auth import auth_middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)
+
+# CORS en son eklenir = en dışta çalışır = her isteğe CORS header ekler
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
+)
 
 app.include_router(conversations.router)
 app.include_router(chat.router)
@@ -66,5 +64,5 @@ async def get_models():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))  # Railway PORT env variable'ını kullan
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
