@@ -19,11 +19,18 @@ app = FastAPI(title="Kira AI API", version="3.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://kiragpt.vercel.app",
+        "https://kira-ai.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "*",
+    ],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=3600,
 )
 
 from services.auth import auth_middleware
