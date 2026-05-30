@@ -19,10 +19,11 @@ app = FastAPI(title="Kira AI API", version="3.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tüm originlere izin ver (LAN erişimi için)
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 from services.auth import auth_middleware
